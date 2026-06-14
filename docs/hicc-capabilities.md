@@ -1,282 +1,362 @@
-# hicc 能力图谱
+# hicc 能力地图
 
-> 子模块 `hicc/` 是**只读**的 — 本项目从不修改它的源码（除 `examples/047_noexcept_basic` 的 C++ 端做了一处 `noexcept` 移除，已在该特性 README 醒目标注）。
+> 目的：在不修改 hicc 任何源码的前提下，搞清 9 个子项目各自提供什么、不提供什么。本文是 `cpp-feature-matrix` 方案的 P1 产物，后续 48 个示例的手动 AST→hicc 映射都基于本文的清单选模式。
 
-## 1. 9 个子 crate 的职责
+## 1. 子项目一览
 
-| 子 crate | 类型 | 职责 | 本项目是否使用 |
-|----------|------|------|----------------|
-| `hicc` | lib（核心） | 安全 FFI 框架本体：`hicc::cpp!`、`import_lib!`、`import_class!` 宏、`Exception<T>`、`Pod<T>`、`make_unique` | ✅ 每个特性都用 |
-| `hicc-macros` | proc-macro | 解析 `import_lib!` / `import_class!` 的 Rust 端语法树 | 间接（hicc 依赖） |
-| `hicc-build` | build-dep | 在 `build.rs` 里读 Rust 源码，生成 C++ 适配代码 + 调 `cc::Build` 编译 | ✅ 每个特性的 `rust_hicc/build.rs` |
-| `hicc-autogen` | lib | `hicc-build` 内部的代码生成器（`ExportLib` / `ExportClasses` / `Cpp`） | 间接 |
-| `hicc-std` | lib | 把 C++ 标准库容器（vector / map / array / string 等）映射为 Rust 类型 | ✅ 034-037 STL 特性 |
-| `hicc-rs` | lib | 反向 FFI：Rust → C ABI | ❌（本项目只走 C++ → Rust 方向） |
-| `hicc-rs-macros` | proc-macro | `hicc-rs` 的过程宏 | ❌ |
-| `hicc-cbindgen` | build-dep | 生成 `hicc-rs` 的 C 头文件 | ❌ |
-| `hicc-examples` / `hicc-rs-examples` | examples | 官方示例（C++ 内联在 Rust 源码中） | 参照用 |
+| 子项目 | 方向 | 角色 | 关键 API |
+|---|---|---|---|
+| `hicc` | C++ → Rust | 核心库：宏 + 运行时类型 + Trait | `cpp!` / `import_lib!` / `import_class!`、`AbiClass`、`ClassRef`、`ClassRefMut`、`ClassPtr`、`ClassMutPtr`、`Pod<T>`、`Exception<T>`、`Function<fn()>`、`Interface<T>`、`unique_ptr<T>`、`shared_ptr<T>` |
+| `hicc-macros` | C++ → Rust | 过程宏入口（薄壳） | `import_lib` / `import_class` / `cpp` |
+| `hicc-autogen` | 内部 | syn 解析器：把宏输入转成 Rust 代码 + cpp 适配代码 | （仅内部用，下游不直接调） |
+| `hicc-build` | C++ → Rust | build.rs 驱动：扫 rust 文件、生成 cpp 适配代码、调 cc::Build 编静态库 | `Build::new().rust_file(...).compile(name)` |
+| `hicc-std` | C++ → Rust | STL 容器的现成 Rust 包装 | `hicc_std::string / vector / array / deque / list / forward_list / set / unordered_set / map / unordered_map / stack / queue` |
+| `hicc-rs` | Rust → C ABI | 反向：把 Rust 类型/函数导出为 C ABI | `#[export_class]` / `#[export_lib]` / `foreign!()` |
+| `hicc-rs-macros` | Rust → C ABI | 过程宏入口 | （仅 hicc-rs 内部用） |
+| `hicc-cbindgen` | Rust → C ABI | 工具：从 hicc-rs crate 生成 C 头 / Python / Cython 绑定 | CLI: `hicc-cbindgen -c <crate> -l c/python/cython -o <out>` |
+| `hicc-examples` | 文档 | 官方教程样例 | `hello-world / import_lib_class / interface / dynamic_cast / destroy / functional / placement_new / datas / rust_any / memory / class / functions / stl` |
 
-### 依赖图
+> 本仓库场景是 **C++ → Rust**，所以主要用 `hicc / hicc-macros / hicc-build / hicc-std`。`hicc-rs / hicc-rs-macros / hicc-cbindgen` 是反向链路（Rust 暴露给 C/Python），本文档暂不展开，仅在 README 矩阵中标注哪些 C++ 特性如果反向会用到。
 
-```
-                ┌──────────────────────────────────────┐
-                │ hicc-macros (proc-macro)             │
-                │   解析 import_lib!/import_class! 语法 │
-                └────────────┬─────────────────────────┘
-                             │
-              ┌──────────────▼──────────────┐
-              │ hicc (core lib)             │
-              │   Exception<T> / Pod<T> /   │
-              │   make_unique / cpp! / ...  │
-              └────┬────────────────┬───────┘
-                   │                │
-       ┌───────────▼────┐     ┌─────▼─────────────────────┐
-       │ hicc-std       │     │ hicc-build (build-dep)    │
-       │  STL 容器适配   │     │  读 Rust 源 → 生成 C++ 适配 │
-       └────────────────┘     │  → cc::Build 编译          │
-                              └────┬──────────────────────┘
-                                   │
-                            ┌──────▼──────────────┐
-                            │ hicc-autogen        │
-                            │  ExportLib/Classes  │
-                            └─────────────────────┘
+## 2. 三大宏速查
 
-  (hicc-rs / hicc-rs-macros / hicc-cbindgen：反向 FFI，本项目不用)
-```
-
-## 2. hicc 的核心使用模式
-
-### 模式 A：内联 C++（hicc 官方示例风格）
-
-C++ 代码放在 Rust 源码的 `hicc::cpp! { ... }` 块内，hicc-build 自动抽取并编译。
+### 2.1 `hicc::cpp! { ... }` — 内嵌 C++ 代码块
+作用：把宏内的 C++ 源码原样喂给 hicc-build 生成的 cpp 文件。常见用法是 `#include` 头文件 + 写内联 C++ 适配函数。
 
 ```rust
 hicc::cpp! {
     #include <iostream>
-    static void hello_world() { std::cout << "hello"; }
-}
-
-hicc::import_lib! {
-    #![link_name = "example"]
-    #[cpp(func = "void hello_world()")]
-    fn hello_world();
+    #include "my_header.h"
+    static void adapter() { /* C++ 实现 */ }
 }
 ```
 
-### 模式 B：外部 C++（本项目使用 ✅）
+也可作为「灵活适配层」嵌套在 `import_class!` 内部，弥补 hicc 自动适配覆盖不到的接口（参见 reference.md 末尾示例）。
 
-C++ 项目独立放在 `cpp/`，预先用 standalone/Make/CMake 构建出 `lib<name>.a`。Rust 端 `hicc::cpp!` 块**只**放 `#include` 把外部头文件带入，绑定靠 `import_lib!` / `import_class!`，`build.rs` 用 `cargo::rustc-link-lib` 链接外部库。
+### 2.2 `hicc::import_lib!` — 声明 C++ 全局/静态函数
 
 ```rust
-// rust_hicc/src/lib.rs
-hicc::cpp! {
-    #include "hello_world.h"     // 外部头文件
-}
-
 hicc::import_lib! {
-    #![link_name = "<name>_hicc"]   // hicc 生成的 adapter 库名
-    #[cpp(func = "void hello_world()")]
-    fn hello();
+    #![link_name = "example"]      // 必须，全局唯一，作为静态库名
+
+    // 可选：在当前代码块内建立 C++ 类型别名
+    class Foo;                       // Foo 代表 C++ 类 Foo
+    class Bar = some::Bar;           // Bar 代表 C++ some::Bar
+    class VecI32 = std::vector<int>; // 显式给容器起名
+
+    // 普通 C++ 函数
+    #[cpp(func = "int add(int, int)")]      // 注意：只写类型，不写形参名
+    fn add(a: i32, b: i32) -> i32;
+
+    // 模板函数（含模板参数列表）
+    #[cpp(func = "std::unique_ptr<std::string> std::make_unique<std::string, const char*>(const char*&&)")]
+    unsafe fn string_from(s: *const i8) -> hicc_std::string;
+
+    // 把工厂函数附加到 Rust struct 的关联函数（生成 impl Foo）
+    #[cpp(func = "Foo* Foo::new_instance()")]
+    #[method(class = Foo, name = new)]
+    fn foo_new() -> Foo;
+
+    // 缺省参数：Rust 端省略尾部参数即可
+    #[cpp(func = "int foo(int, int)")]
+    fn foo(a: i32) -> i32;
+
+    // 异常捕获：返回 hicc::Exception<T>
+    #[cpp(func = "int risky(int)")]
+    fn risky(v: i32) -> hicc::Exception<i32>;
+
+    // 变长参数（最后参数是 va_list）
+    #[cpp(func = "void log(const char*, va_list)")]
+    unsafe fn log(fmt: *const i8, ...);
 }
 ```
 
-```rust
-// rust_hicc/build.rs
-hicc_build::Build::new()
-    .rust_file("src/lib.rs")
-    .compile("<name>_hicc");              // 编译 hicc adapter
+### 2.3 `hicc::import_class!` — 声明 C++ 类（成员方法 / 字段 / 继承）
 
-println!("cargo::rustc-link-search=native=../cpp/build");
-println!("cargo::rustc-link-lib=<name>"); // 外部 C++ 实现
-println!("cargo::rustc-link-lib=stdc++");
-```
-
-**模式 B 的关键约束**：
-- `hicc::cpp!` 块只放 `#include`，**不要**重复 C++ 实现，否则与外部 `.a` 冲突
-- `import_class!` / `import_lib!` 中 `#[cpp(method = "ret f(args)")]` 的签名必须与 `cpp/<name>.h` 中的声明完全一致
-- `link_name` 必须唯一，避免与外部库名冲突（约定加 `_hicc` 后缀）
-
-## 3. C++ 构造 → hicc 支持表
-
-| C++ 构造 | hicc 支持度 | 通过什么支持 | 关键代码 |
-|----------|-------------|--------------|----------|
-| 自由函数 | ✅ 直接 | `import_lib!` + `#[cpp(func=...)]` | `fn hello();` |
-| 函数重载 | ✅ 直接 | Rust 端加类型后缀 | `fn add_i32(...)` `fn add_f64(...)` |
-| 默认参数 | ✅ 直接 | Rust 端补完整签名 | `#[cpp(func = "int f(int, int)")]` |
-| inline 函数 | ✅ 直接 | 透明 | 同普通函数 |
-| variadic `...` | ⚠️ C++ 端调整 | C++ 写固定 arity 包装 | `int sum_n(int n, ...)` → `int sum2(int,int)` |
-| 类（基础） | ✅ 直接 | `import_class!` + factory | `class Foo { fn foo(&self...); }` |
-| 构造/析构 | ✅ 直接 | factory + `destroy=` | `fn foo_new() -> Foo;` |
-| 拷贝构造 | ✅ 直接 | C++ 写 `T clone(T*)` 包装 | 命名函数 |
-| 移动构造 | ✅ 直接 | `T&&` 方法用 `self` 接收 | `fn take(self, ...) -> Self;` |
-| 静态成员 | ✅ 直接 | 在 `import_lib!` 中描述 | `#[cpp(func = "int Foo::count()")]` |
-| const 成员 | ✅ 直接 | `#[cpp(method = "ret f() const")]` | `fn foo(&self, ...) -> ...` |
-| volatile 成员 | ✅ 直接 | `#[cpp(method = "ret f() volatile")]` | `fn foo(&mut self, ...)` |
-| 单继承 | ✅ 直接 | 派生类独立 `import_class!` | 合并基类公共方法 |
-| 多继承 | ✅ 直接（或 `#[interface]`） | 同上 或 `@make_proxy` | — |
-| 虚函数 / 纯虚 / override | ✅ 直接 | 普通方法路径（vtable 透明） | — |
-| 菱形虚继承 | ⚠️ 限制标注 | 简化为组合 | README 标注 |
-| 运算符重载 | 💬 注释式注入 | C++ 写命名包装函数 | `vec2_add` |
-| 友元函数 | ✅ 直接 | 暴露为自由函数 | — |
-| explicit 构造 | ✅ 直接 | factory 模式 | — |
-| mutable 成员 | ✅ 直接 | 透明（const 方法可改） | — |
-| typeid / RTTI | ✅ 直接 | 命名函数返回 type info | `type_name_of(T*) -> string` |
-| 函数模板 | ✅ 直接 | `#[cpp(func = "ret f<T>(args)")]` | 显式实例化 |
-| 类模板 | 💬 活跃注入 | `hicc::cpp!` 内 `using FooInt = Foo<int>;` + factory | typedef + factory |
-| 模板特化 | 💬 活跃注入 | namespace 级包装调用特化静态方法 | — |
-| 显式实例化 | 💬 活跃注入 | typedef + factory | — |
-| 变参模板 | 💬 活跃注入 | 固定 arity 包装（sum_two / sum_three） | — |
-| unique_ptr | ✅ 直接 | 返回值类型剥 `unique_ptr<>` | `fn make() -> Foo;` |
-| shared_ptr | ✅ 直接 | 同上 | — |
-| 自定义删除器 | ✅ 直接 | `destroy="free_func"` | `import_class! { ... destroy="..."; }` |
-| placement new | ✅ 直接 | factory `T* construct_at(buf, args)` | — |
-| RAII | ✅ 直接 | `destroy=` 给 Drop | — |
-| std::vector | ✅ 直接（hicc-std） | `class Vec = hicc_std::vector<Pod<T>>` | — |
-| std::map / unordered_map | ✅ 直接（hicc-std） | 同上 | — |
-| std::string | ✅ 直接 | **必须** `import_class! class string` | **不可**用 `hicc_std::string` |
-| std::array | ✅ 直接（hicc-std） | typedef `CppArr=std::array<T,N>` | — |
-| std::tuple | ⚠️ 限制标注 | 命名 accessor first/second | — |
-| lambda | ⚠️ C++ 端调整 | C++ 写命名包装函数 | — |
-| std::function | ⚠️ C++ 端调整 | 同上 | — |
-| std::bind | ⚠️ 限制标注 | 命名包装 | — |
-| throw 异常 | ✅ 直接 | Rust 返回 `hicc::Exception<T>` | `.ok()` 转 Result |
-| namespace（嵌套） | ✅ 直接 | Rust 短名 + `#[cpp]` 保留完整限定 | — |
-| enum class | ⚠️ C++ 端调整 | int 转换函数 | `color_to_int/int_to_color` |
-| union | 💬 注释式注入 | ValueBox 包装类（type_tag + from_X/as_X） | — |
-| constexpr | ✅ 直接 | 透明 | — |
-| noexcept 成员方法 | ⚠️ **C++ 端调整** | **唯一例外**：移除成员方法 noexcept（自由函数可保留） | — |
-| 函数指针参数 | ❌ 不支持 | — | 改用 C++ 端包装 |
-| 嵌套模板 `vector<vector<int>>` | ❌ 不支持 | — | 改用扁平结构 |
-
-## 4. 限制清单（详细说明）
-
-### 4.1 `noexcept` 成员方法（⚠️ 047 唯一例外）
-
-**现象**：hicc-build 在生成 adapter 时，会对成员方法做类型匹配。如果 C++ 端是 `int foo() noexcept`，但 `import_class!` 中 `#[cpp(method = "int foo()")]`，签名不匹配，构建失败。
-
-**降级**：
-- **自由函数**：可保留 noexcept，Rust 端 `#[cpp(func = "void f() noexcept")]` 也可（hicc-build 透明处理）
-- **成员方法**：C++ 端移除 `noexcept`（仅 047 这么做）
-
-### 4.2 运算符重载（💬 注释式注入）
-
-**现象**：hicc 无法直接绑定 `operator+` 等运算符（语法上不支持）。
-
-**降级**：C++ 端写命名包装函数：
-```cpp
-Vec2 operator+(Vec2, Vec2);   // 原签名
-Vec2 vec2_add(Vec2 a, Vec2 b) { return a + b; }  // 包装
-```
-Rust 端：`#[cpp(func = "Vec2 vec2_add(Vec2, Vec2)")]`
-
-### 4.3 union（💬 注释式注入）
-
-**现象**：Rust 没有 C++ 那种 union 概念，hicc 也没有直接支持。
-
-**降级**：C++ 端写 ValueBox 包装类：
-```cpp
-union U { int i; float f; };
-class UBox {
-    int type_tag;
-    union U data;
-public:
-    static UBox from_int(int);
-    static UBox from_float(float);
-    int as_int() const;
-    float as_float() const;
-};
-```
-
-### 4.4 lambda / std::function / std::bind（⚠️ C++ 端调整）
-
-**现象**：闭包类型不可命名，跨 FFI 无法描述。
-
-**降级**：C++ 端写命名包装函数。
-
-### 4.5 菱形虚继承 / 嵌套模板（⚠️ 限制标注）
-
-**现象**：vtable + offset 复杂；嵌套模板类型描述不出来。
-
-**降级**：简化为组合 / 扁平结构，README 标注。
-
-### 4.6 `std::string`（⚠️ Key Pattern）
-
-**陷阱**：`hicc-std` 提供了 `hicc_std::string` alias，但**不要**用它绑定返回 std::string 的 C++ 函数。原因：hicc-std 的 string 是另一套类型层级，与 C++ 的 `std::string` 内存布局不兼容，跨 FFI 会段错误。
-
-**正确做法**：
 ```rust
 hicc::import_class! {
-    #[cpp(class = "std::string")]
-    class string {
-        #[cpp(method = "const char* c_str() const")]
-        fn c_str(&self) -> *const u8;
+    // 类型别名（同 import_lib）
+    class Bar = bar::Bar;
+
+    #[cpp(class = "Foo")]                // 必填：C++ 类完整签名
+    class Foo {
+        #[cpp(method = "void bar() const")]      // const 成员函数
+        fn bar(&self);
+
+        #[cpp(method = "void bump()")]           // 非 const 成员函数
+        fn bump(&mut self);
+
+        // 字段（值返回引用）
+        #[cpp(field = "count")]
+        fn count(&self) -> &usize;
+
+        // 静态成员变量
+        #[cpp(data = "Foo::g_count")]
+        fn g_count() -> &'static usize;
+
+        // 构造函数（必须放 import_lib，但可在 class 内做 Rust 包装）
+        fn new(x: i32) -> Self {
+            unsafe { foo_new(x) }
+        }
+
+        // 右值引用方法（self 转移所有权）
+        #[cpp(method = "std::string into() &&")]
+        fn into_name(self) -> hicc_std::string;
     }
+
+    // 模板类
+    #[cpp(class = "template<class T, class Alloc> std::vector<T, Alloc>")]
+    pub class vector<T> {
+        #[cpp(method = "bool is_empty() const")]
+        pub fn is_empty(&self) -> bool;
+    }
+
+    // 接口（虚函数 / 抽象类）
+    #[interface]
+    class AnimalTrait {
+        #[cpp(method = "void speak() const")]
+        fn speak(&self);
+    }
+
+    // 继承
+    #[cpp(class = "Baz", ctor = "Baz()")]   // ctor 指明默认构造
+    class Baz: Bar {
+        #[cpp(method = "void baz() const")]
+        fn baz(&self);
+    }
+
+    // 私有析构：destroy = 释放函数名
+    #[cpp(class = "Foo", destroy = "Foo::free_instance")]
+    class Foo { /* ... */ }
 }
 ```
 
-### 4.7 类模板（💬 活跃注入）
+### 2.4 `import_lib` / `import_class` 中的内置函数（builtin）
 
-**现象**：`Foo<int>` 不能直接作为 Rust 类型描述。
+| builtin | 出现位置 | 作用 |
+|---|---|---|
+| `T @make_proxy<T>()` | import_lib 的 `#[cpp(func = ...)]` | 创建 Rust 实现的代理对象，参数必须是 `hicc::Interface<T>`，结合 `#[interface(name = ...)]` 一起用，实现 C++ 抽象类的 Rust 侧实现 |
+| `T @dynamic_cast<T>()` | import_lib / import_class | C++ `dynamic_cast`，需要在 Rust 侧为每个目标类型单独定义接口 |
+| `hicc::placement_new<T, Args...>(buf, len, args...)` | import_lib | 在 Rust 提供的内存上构造 C++ 对象，返回借用（生命周期绑定到输入缓冲） |
 
-**降级**：在 `hicc::cpp!` 块内 typedef + factory：
-```rust
-hicc::cpp! {
-    #include "foo.h"
-    using FooInt = Foo<int>;
-    inline FooInt* foo_int_new(int v) { return new Foo<int>(v); }
-}
+## 3. hicc-build API
 
-hicc::import_class! {
-    #[cpp(class = "FooInt")]
-    class FooInt {
-        // ... methods ...
-    }
-}
-
-hicc::import_lib! {
-    #[cpp(func = "FooInt* foo_int_new(int)")]
-    fn foo_int_new(v: i32) -> FooInt;
-}
-```
-
-## 5. hicc-build 的 build.rs 约定
+`Build` 是 `cc::Build` 的包装（`Deref/DerefMut`），所以可以直接调 `cc::Build` 的方法（`include / file / cpp(true) / flag(...) / ...`）。
 
 ```rust
 fn main() {
-    // 1. 解析 lib.rs 中的 import_lib!/import_class!/cpp! 宏，生成 C++ 适配代码并编译
-    hicc_build::Build::new()
-        .rust_file("src/lib.rs")
-        .compile("<lib_name>_hicc");
+    let cpp_dir = std::path::PathBuf::from("../cpp");
+    let mut build = hicc_build::Build::new();      // 自动 include hicc 头 + 设置 cpp(true)
+    {
+        let cc: &mut cc::Build = build.deref_mut();
+        cc.include(&cpp_dir).include(".")
+          .cpp(true)
+          .file(cpp_dir.join("my_lib.cpp"));
+    }
+    build.rust_file("src/lib.rs")                  // 必填：扫这个文件的 hicc 宏
+         .compile("my_lib");                       // 静态库名（与 link_name 对应）
 
-    // 2. 链接外部 C++ 静态库（项目模式 B）
-    println!("cargo::rustc-link-search=native=../cpp/build");
-    println!("cargo::rustc-link-lib=<name>");
+    println!("cargo::rustc-link-lib=my_lib");
+    #[cfg(not(all(target_os = "windows", target_env = "msvc")))]
     println!("cargo::rustc-link-lib=stdc++");
-
-    // 3. 让生成的 adapter 找到我们的 C++ 头文件
-    println!("cargo::rustc-flags=-I../cpp");
-
-    // 4. 依赖追踪
     println!("cargo::rerun-if-changed=src/lib.rs");
-    println!("cargo::rerun-if-changed=../cpp/build/lib<name>.a");
+    println!("cargo::rerun-if-changed=../cpp/my_lib.cpp");
 }
 ```
 
-## 6. hicc-std 速查
+## 4. hicc-std 已封装的 STL 容器
+
+`hicc-std/src/lib.rs` 导出以下模块：
+
+| Rust 模块 | C++ 类型 | 备注 |
+|---|---|---|
+| `std_string` | `std::string / u16string / u32string` | 提供 `from(c"...")`、`as_cstr()`、`len()`、`insert`、`append` 等 |
+| `std_vector` | `std::vector<T>` | 泛型，POD 用 `hicc::Pod<T>` |
+| `std_array` | `std::array<T, N>` | N 在 C++ 侧 typedef 固定 |
+| `std_deque` | `std::deque<T>` | |
+| `std_list` | `std::list<T>` | |
+| `std_forward_list` | `std::forward_list<T>` | |
+| `std_set` | `std::set<T>` | |
+| `std_unordered_set` | `std::unordered_set<T>` | |
+| `std_map` | `std::map<K, V>` | |
+| `std_unordered_map` | `std::unordered_map<K, V>` | |
+| `std_stack` | `std::stack<T>` | |
+| `std_queue` | `std::queue<T>` | |
+
+> **使用约束**：模板参数必须是 C++ 类（即 `AbiClass`）或 `hicc::Pod<T>` 包裹的 POD。容器类型需在 `hicc::cpp!` 块中先 `typedef` 一个名字，再在 `import_lib` 里 `class Xxx = hicc_std::vector<hicc::Pod<i32>>;` 起别名 + 写一个 `make_unique<T>()` 工厂函数。
+
+## 5. 类型映射核心规则（来自 `hicc/src/lib.rs` 顶部）
+
+### 5.1 函数返回类型映射
+
+| C++ 返回类型 | Rust 类型 |
+|---|---|
+| `T` | `T` |
+| `T&&` | `T` |
+| `std::unique_ptr<T>` | `T` |
+| `std::unique_ptr<T, D>` | `hicc::unique_ptr<T>` |
+| `std::shared_ptr<T, D>` | `hicc::shared_ptr<T>` |
+| `const T&` | `hicc::ClassRef<'_, T>` |
+| `T&` | `hicc::ClassRefMut<'_, T>` |
+| `T*` | `hicc::ClassMutPtr<'_, T, 1>` |
+| `const T*` | `hicc::ClassPtr<'_, T, 1>` |
+
+> 多重指针 `T**` → `ClassPtr<'_, T, 2>`，`N` 表示指针重数。
+
+### 5.2 函数参数类型映射
+
+| C++ 参数类型 | Rust 参数 |
+|---|---|
+| `T` / `T&&` / `std::unique_ptr<T>` | `T` |
+| `std::unique_ptr<T, D>` | `hicc::unique_ptr<T>` |
+| `const T&` | `&T` |
+| `T&` | `&mut T` |
+| `const T*` | `&hicc::ClassPtr<'_, T, 1>` |
+| `T*` | `&hicc::ClassMutPtr<'_, T, 1>` |
+
+### 5.3 模板参数（泛型 T）类型映射
+
+| C++ 模板参数 | Rust 输入 | Rust 输出 |
+|---|---|---|
+| `T` / `T&&` | `<T as AbiType>::InputType` | `<T as AbiType>::OutputType` |
+| `const T&` | `&<T as AbiType>::InputType` | `<T as AbiType>::OutputRef<'_>` |
+| `T&` | `&mut <T as AbiType>::InputType` | `<T as AbiType>::OutputRefMut<'_>` |
+| `const T*` | `<T as AbiType>::InputPtr<'_>` | `<T as AbiType>::OutputPtr<'_>` |
+| `T*` | `<T as AbiType>::InputMutPtr<'_>` | `<T as AbiType>::OutputMutPtr<'_>` |
+
+### 5.4 自动 `&T → ClassRef<'_, T>` 转换
+
+如果某个 `import_lib!` / `import_class!` 块里通过 `class Foo;` 或 `class Foo = ...;` 声明了 C++ 类型，那么该块内的 Rust 函数返回类型写 `&Foo` 会被宏自动改写为 `ClassRef<'_, Foo>`，写 `&mut Foo` 改为 `ClassRefMut<'_, Foo>`。这能消除"返回 C++ 引用"的内存安全风险。
+
+## 6. Trait 与运行时类型
+
+| Trait / 类型 | 作用 | 常用 API |
+|---|---|---|
+| `AbiClass` | 所有 C++ 类映射类型都实现 | `is_null() / write(&val) / make_unique() / make_ref() / make_ref_mut()` |
+| `AbiType` | 所有可跨 ABI 的类型实现（含模板参数） | `Output / OutputRef / OutputRefMut / OutputPtr / OutputMutPtr / Input / InputType` |
+| `ClassRef<'a, T>` | `const T&` 的对应 | deref 到 `&T` |
+| `ClassRefMut<'a, T>` | `T&` | deref_mut 到 `&mut T` |
+| `ClassPtr<'a, T, N>` | `const T*...*` | 多重只读指针 |
+| `ClassMutPtr<'a, T, N>` | `T*...*` | 多重可写指针 |
+| `Pod<T>` | POD 模板参数的标记 | `vector<hicc::Pod<i32>>` |
+| `Exception<T>` | 捕获 C++ 异常 | `.ok() -> Result<T, String>` |
+| `Function<fn(...) -> R>` | `std::function<R(Args...)>` | Rust 闭包 `.into()` 后传入；返回值 `.into()` 后调用 |
+| `Interface<T>` | Rust 实现 C++ 接口的代理桥 | `@make_proxy<T>()` 的参数类型 |
+| `unique_ptr<T>` | `std::unique_ptr<T, D>` 自定义 deleter | |
+| `shared_ptr<T>` | `std::shared_ptr<T, D>` 自定义 deleter | |
+
+## 7. 已知 hicc 直接覆盖的能力清单
+
+| 能力 | hicc 提供 | 用法 |
+|---|---|---|
+| 全局 / 静态 / 模板函数 | ✅ | `import_lib!` + `#[cpp(func = ...)]` |
+| 缺省参数 | ✅ | Rust 端省略尾部参数 |
+| 忽略返回值 | ✅ | Rust 函数不写返回类型 |
+| 异常 | ✅ | `hicc::Exception<T>` |
+| 变长参数（C 风格 `...` 或 `va_list`） | ✅ | Rust `unsafe fn f(...)` |
+| 类成员函数（const / 非 const / 右值） | ✅ | `import_class!` + `#[cpp(method = ...)]` |
+| 类字段（成员变量） | ✅ | `#[cpp(field = ...)]` |
+| 全局 / 静态变量 | ✅ | `#[cpp(data = ...)]` |
+| 继承（单 / 多 / 虚继承） | ✅（语义级） | `class Derived: Base` 语法 |
+| 抽象类 / 虚函数 / 纯虚 | ✅ | `#[interface]` + `@make_proxy<T>()` |
+| `dynamic_cast` | ✅ | `@dynamic_cast<T>()` |
+| 私有析构 | ✅ | `#[cpp(class = ..., destroy = ...)]` |
+| `std::function` / 闭包 | ✅ | `hicc::Function<fn(...) -> R>` |
+| 模板函数 / 模板类 | ✅ | 完整 `template<...>` 签名 |
+| `unique_ptr` / `shared_ptr` | ✅ | 默认 deleter 自动映射；自定义 deleter 用 `hicc::unique_ptr<T>` |
+| STL 容器 | ✅ | hicc-std 12 个容器 |
+| placement new | ✅ | `hicc::placement_new<T, Args>(buf, len, args)` |
+| C++ 容器存 Rust 数据 | ✅ | `hicc::RustAny<T>` + `RustKey` / `RustHashKey` |
+
+## 8. 已知 hicc **不直接支持**或需绕过的能力
+
+| 能力 | 状态 | 绕过方式 |
+|---|---|---|
+| 操作符重载（`operator+` 等） | ❌ 直接 | 在 `hicc::cpp!` 块写 `static T add(const T&, const T&) { return a + b; }` 包装函数，再 `import_lib!` 导出 |
+| RTTI `typeid(T)` / `typeid(obj).name()` | ❌ 直接 | 包装成 `const char* hicc_typeid_name(const T&)` 在 cpp! 块返回 |
+| `volatile` 修饰 | ⚠️ 部分 | C++ 侧可以保留 `volatile`，但 Rust 侧没有对应概念；用 `&mut T` + 文档说明 |
+| `union`（带非平凡成员） | ❌ 直接 | 在 cpp! 块写 accessor 函数（get/set 各 variant） |
+| `constexpr` 全局常量 | ✅ 同静态变量 | `#[cpp(data = "...")]` |
+| `noexcept` | ✅ 自动忽略 | Rust 没有等价修饰，C++ 侧的 noexcept 不影响 FFI 签名 |
+| 多返回值 / 结构化绑定 | ⚠️ | 用 struct 包；或用 `std::tuple` 经 hicc-std |
+| C++17 结构化绑定 / 折叠表达式 / if-constexpr | ✅ | 这些是编译期特性，对 FFI 透明 |
+| 协变返回类型 | ⚠️ | 在 Rust 侧手写转换 |
+
+## 9. 单特性 Rust crate 模板（用于 Phase 5）
+
+```text
+examples/{NNN_name}/
+├── cpp/
+│   ├── {name}.h              # extern "C" 接口
+│   ├── {name}.cpp            # 实现
+│   ├── main.cpp              # 独立可执行入口
+│   ├── standalone.sh         # g++ 一键构建+运行
+│   ├── Makefile
+│   └── CMakeLists.txt
+├── ast/
+│   ├── {name}.i              # 宏展开后源（.gitignore）
+│   └── ast.json              # clang JSON AST（.gitignore）
+├── rust_hicc/
+│   ├── Cargo.toml
+│   ├── build.rs              # 驱动 cc::Build + hicc_build::Build
+│   ├── src/lib.rs            # hicc::cpp! + import_lib!/import_class!
+│   └── tests/smoke.rs
+└── ast-to-hicc-notes.md      # 手动 AST→hicc 方案记录
+```
+
+`rust_hicc/Cargo.toml`（关键依赖用相对路径指向仓库内的 hicc）：
+
+```toml
+[package]
+name = "{name}"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "{name}"
+path = "src/lib.rs"
+
+[[bin]]
+name = "{name}"
+path = "src/main.rs"
+
+[dependencies]
+hicc = { path = "../../../hicc/hicc", version = "0.2" }
+hicc-std = { path = "../../../hicc/hicc-std", version = "0.2" }  # 按需
+
+[build-dependencies]
+cc = "1.0"
+hicc-build = { path = "../../../hicc/hicc-build", version = "0.2" }
+```
+
+`rust_hicc/build.rs`（标准模板）：
 
 ```rust
-use hicc_std::{Pod, vector, map, array};
+fn main() {
+    let cpp_dir = std::path::PathBuf::from("../cpp");
+    let mut build = hicc_build::Build::new();
+    use std::ops::DerefMut;
+    let cc_build: &mut cc::Build = build.deref_mut();
+    cc_build.include(&cpp_dir).include(".").cpp(true)
+            .file(cpp_dir.join("{name}.cpp"));
 
-hicc::import_class! {
-    #[cpp(class = "std::vector<int>")]
-    class Vec = vector<Pod<i32>>;          // 整数 vector
+    build.rust_file("src/lib.rs").compile("{name}");
 
-    #[cpp(class = "std::map<std::string,int>")]
-    class Map = map<Pod<*const u8>, Pod<i32>>;  // 简化示意
-
-    #[cpp(class = "std::array<int,3>")]
-    class Arr = array<Pod<i32>, 3>;        // 定长数组
+    println!("cargo::rustc-link-lib={name}");
+    #[cfg(not(all(target_os = "windows", target_env = "msvc")))]
+    println!("cargo::rustc-link-lib=stdc++");
+    println!("cargo::rerun-if-changed=src/lib.rs");
+    println!("cargo::rerun-if-changed=../cpp/{name}.cpp");
+    println!("cargo::rerun-if-changed=../cpp/{name}.h");
 }
 ```
 
-注意：`Pod<T>` 是 hicc-std 的"平凡可拷贝"包装。`string` 不要用 `hicc_std::string`（见 §4.6）。
+## 10. 已知约束（来自 hicc 源码 / reference.md）
+
+1. **依赖 C++11 或更高**。
+2. **不直接支持操作符重载**，需 `cpp!` 块包装。
+3. **`build.rs` 中 `rust_file()` 扫描整个 .rs 文件**，宏以外的 item 会被忽略，但文件必须能被 syn 解析。
+4. **`hicc-build` 只产静态库**，最终二进制要手动 `println!("cargo::rustc-link-lib=stdc++")` 链接 C++ 标准库。
+5. **`import_lib!` / `import_class!` 的 `#[cpp(func/method/...)]` 声明只写类型，不写形参名**。这是常见的踩坑点。
+6. **模板参数** 只能是 C++ 类或 `hicc::Pod<T>` 包裹的 POD。
+7. **容器类型**必须先在 `cpp!` 块 `typedef`，再在 `import_lib` 起别名 + 工厂函数。
