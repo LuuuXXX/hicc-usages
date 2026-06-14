@@ -1,0 +1,16 @@
+[package]
+name = "unique_ptr"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+hicc = { path = "../../../hicc/hicc", version = "0.2" }
+
+[build-dependencies]
+hicc-build = { path = "../../../hicc/hicc-build", version = "0.2" }
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
