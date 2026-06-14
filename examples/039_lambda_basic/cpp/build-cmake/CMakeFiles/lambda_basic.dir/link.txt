@@ -1,0 +1,2 @@
+/usr/bin/ar qc liblambda_basic.a CMakeFiles/lambda_basic.dir/lambda_basic.cpp.o
+/usr/bin/ranlib liblambda_basic.a

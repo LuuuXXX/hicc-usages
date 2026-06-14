@@ -1,0 +1,4 @@
+/root/cpp2rust/hicc-usages/examples/039_lambda_basic/cpp/build-cmake/CMakeFiles/lambda_basic.dir
+/root/cpp2rust/hicc-usages/examples/039_lambda_basic/cpp/build-cmake/CMakeFiles/lambda_basic_demo.dir
+/root/cpp2rust/hicc-usages/examples/039_lambda_basic/cpp/build-cmake/CMakeFiles/edit_cache.dir
+/root/cpp2rust/hicc-usages/examples/039_lambda_basic/cpp/build-cmake/CMakeFiles/rebuild_cache.dir
