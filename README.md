@@ -65,94 +65,267 @@ hicc-usages/
 
 ## 特性支持总表
 
-**2 种处理模式：**
+**2 种模式 + 4 种 rust_gen 工作机制：**
 
-| 标记 | 模式 | 含义 |
+| 模式 | 机制 | 含义 |
 |------|------|------|
-| ✅ 直接 | 直接路径 | rust_gen 自动产出 active 代码，crate 默认即可编译运行（含 `#[cpp(...)]` 属性直接生成、`hicc::cpp!` 块内活跃注入 typedef/factory、filter 内置跳过等所有自动行为） |
-| 💬 注释式注入 | lib.rs 内注释 | rust_gen 在 `lib.rs` 中以注释形式产出建议包装代码；用户取消注释即启用，不取消对 crate 无影响 |
+| ✅ 直接 | `[attr]` 属性 | rust_gen 直接生成 `#[cpp(class="...")]` / `#[cpp(method="...")]` / `#[cpp(func="...")]` 属性，hicc-build 解析后产出 wrapper |
+| ✅ 直接 | `[inject]` 注入 | rust_gen 在 `lib.rs` 的 `hicc::cpp!` 块内自动注入活跃 C++ 代码（typedef、namespace 级 factory、固定参数包装等），避开 hicc-build 不能解析的语法 |
+| ✅ 直接 | `[skip]` 跳过 | filter.py 内置规则跳过某些符号（基类指针参数、friend、operator 本体等），不生成对应 Rust 绑定 |
+| 💬 注释式注入 | `[suggest]` 建议 | rust_gen 在 `lib.rs` 中以注释形式产出建议包装代码；用户取消注释即启用，不取消对 crate 无影响 |
 
-**48 个特性一览：**
+**48 个特性一览（每行末尾的 → 指向 AST 关键符号映射到的 Rust 块）：**
 
-| # | 特性 | 模式 | 关键说明 |
-|---|------|------|---------|
-| 001 | hello_world | ✅ 直接 | 自由函数 + 简单类 Greeter |
-| 002 | function_overload | ✅ 直接 | 同名重载自动加参数类型后缀（`add_int_int`） |
-| 003 | default_args | ✅ 直接 | C++ 端展开为多个函数，按重载处理 |
-| 004 | inline_functions | ✅ 直接 | inline 对 FFI 透明 |
-| 005 | variadic_functions | ✅ 直接 | C++ 端预固定参数数量（`sum_2/sum_3/sum_4`） |
-| 006 | class_basic | ✅ 直接 | `class Counter { get/inc/dec/reset }` |
-| 007 | class_constructor | ✅ 直接 | 私有 ctor + `static T* create(args)` |
-| 008 | class_copy | ✅ 直接 | `clone()` 命名替代拷贝 ctor |
-| 009 | class_move | ✅ 直接 | `take_from()` 命名替代移动 ctor |
-| 010 | class_static | ✅ 直接 | static 方法转 import_lib 自由函数 |
-| 011 | class_const | ✅ 直接 | const → `&self`，非 const → `&mut self` |
-| 012 | class_volatile | ✅ 直接 | 按 `&self` 处理（Rust 无 volatile） |
-| 013 | inheritance_single | ✅ 直接 | 单继承：每个类独立 import_class |
-| 014 | inheritance_multiple | ✅ 直接 | 多继承：同上，hicc 把继承展平 |
-| 015 | virtual_basic | ✅ 直接 | 虚函数按普通方法处理（vtable 由 C++ 管理） |
-| 016 | virtual_pure | ✅ 直接 | 抽象类无 factory；派生类各自 import |
-| 017 | virtual_override | ✅ 直接 | override 按普通方法处理 |
-| 018 | virtual_diamond | ✅ 直接 | 虚继承菱形：派生类各自 import_class |
-| 019 | operator_overload | 💬 注释式注入 | C++ 保留原始 `operator+/-/* ==`；rust_gen 在 lib.rs 注释中自动产出 `vec2_add/sub/eq` 命名包装供用户取消注释启用 |
-| 020 | friend_function | ✅ 直接 | filter 默认跳过含 class 指针参数的 friend 函数；仅类方法导出 |
-| 021 | explicit_ctor | ✅ 直接 | `explicit` + 静态 create 替代 |
-| 022 | mutable_member | ✅ 直接 | mutable 字段对 filter 透明 |
-| 023 | typeid_rtti | ✅ 直接 | filter 默认跳过含基类指针参数的方法；C++ 端用 `type_name()` 命名 |
-| 024 | template_function | ✅ 直接 | `#[cpp(func = "int max_of<int>(int, int)")]`，hicc-build 透传模板语法 |
-| 025 | template_class | ✅ 直接 | C++ 纯 `template<typename T> class Stack`；rust_gen 在 `hicc::cpp!` 块自动注入 `using IntStack = Stack<int>` + namespace 级 `create_int_stack/free_int_stack` |
-| 026 | template_specialization | ✅ 直接 | C++ 纯 `template + 特化`；rust_gen 自动注入 `type_name_int()` 等命名空间级包装函数调用 `TypeInfo<int>::name()` |
-| 027 | template_instantiation | ✅ 直接 | 同 025，多类型实例化（int + double） |
-| 028 | variadic_template | ✅ 直接 | C++ 纯变参模板；rust_gen 自动注入固定参数包装函数（`sum_two/sum_three` 等）调用原变参模板 |
-| 029 | unique_ptr | ✅ 直接 | PImpl 模式：Impl 嵌套类通过 `parentDeclContextId` 跳过 |
-| 030 | shared_ptr | ✅ 直接 | 同 029 |
-| 031 | custom_deleter | ✅ 直接 | 同 029 + 自定义 deleter |
-| 032 | placement_new | ✅ 直接 | `operator new(size_t, void*)` + Buffer 包装类 |
-| 033 | raii_pattern | ✅ 直接 | 析构由 `free()` 桥接 |
-| 034 | vector_basic | ✅ 直接 | `std::vector<int>` 字段私有，暴露 POD 包装类 IntVector |
-| 035 | map_basic | ✅ 直接 | 同 034，包装 IntMap |
-| 036 | string_basic | ✅ 直接 | `std::string` 字段私有，用 `const char*` C 接口（不用 hicc-std） |
-| 037 | array_basic | ✅ 直接 | 同 034，包装 FixedArray |
-| 038 | tuple_basic | ✅ 直接 | 同 034，包装 Triple 提供 getter/setter |
-| 039 | lambda_basic | ✅ 直接 | lambda 不出现在 AST 顶层；C++ 端用 lambda 实现 + 命名包装 |
-| 040 | std_function | ✅ 直接 | `std::function` 字段私有；`set_mode` / `call` 等方法 import_class |
-| 041 | functional_bind | ✅ 直接 | `std::bind` 不在 AST 顶层；暴露 `configure` / `next` |
-| 042 | exception_basic | ✅ 直接 | try/catch + `thread_local` 错误码；`last_error()` 自由函数 |
-| 043 | namespace_nested | ✅ 直接 | rust_gen 折叠命名空间到 Rust 短名 |
-| 044 | enum_class | ✅ 直接 | C++ 端提供 `color_to_int` / `int_to_color` 转换函数 |
-| 045 | union_basic | 💬 注释式注入 | C++ 保留原始 `union Value`；rust_gen 在 lib.rs 注释中自动产出 `ValueBox` 包装类供用户取消注释启用 |
-| 046 | constexpr_basic | ✅ 直接 | constexpr 对 FFI 透明，按普通函数处理 |
-| 047 | noexcept_basic | ✅ 直接 | 自由函数保留 noexcept（hicc 支持）；成员方法移除 noexcept（hicc-build 类型匹配限制），C++ 端 1 处调整 |
-| 048 | summary | ✅ 直接 | 综合：enum + unique_ptr + exception + namespace + class |
+| # | 特性 | 模式 | 机制 | 关键说明 |
+|---|------|------|------|---------|
+| 001 | hello_world | ✅ 直接 | `[attr]` | function `hello()` → `import_lib!`；class `Greeter` + `create/free` → `import_class!` + `import_lib!` factory |
+| 002 | function_overload | ✅ 直接 | `[attr]` | 同名重载 → `import_lib!` 加参数类型后缀（`add_int_int`） |
+| 003 | default_args | ✅ 直接 | `[attr]` | 多个具名重载 → `import_lib!` 各自一行 |
+| 004 | inline_functions | ✅ 直接 | `[attr]` | inline function → `import_lib!`（inline 对 FFI 透明） |
+| 005 | variadic_functions | ✅ 直接 | `[attr]` | C++ 端预固定参数数量（`sum_2/sum_3/sum_4`） → `import_lib!` |
+| 006 | class_basic | ✅ 直接 | `[attr]` | class `Counter { get/inc/dec/reset }` → `import_class!` 方法 |
+| 007 | class_constructor | ✅ 直接 | `[attr]` | 私有 ctor + `static T* create(args)` → `import_class!` + `import_lib!` factory |
+| 008 | class_copy | ✅ 直接 | `[attr]` | `clone()` 命名方法 → `import_class!`（拷贝 ctor 被 filter 跳过） |
+| 009 | class_move | ✅ 直接 | `[attr]` | `take_from()` 命名方法 → `import_class!`（移动 ctor 被 filter 跳过） |
+| 010 | class_static | ✅ 直接 | `[attr]` | static 方法 → `import_lib!` 自由函数（带类名前缀） |
+| 011 | class_const | ✅ 直接 | `[attr]` | const 方法 → `&self`；非 const → `&mut self`（`import_class!`） |
+| 012 | class_volatile | ✅ 直接 | `[attr]` | volatile 方法 → `&self`（`import_class!`，Rust 无 volatile） |
+| 013 | inheritance_single | ✅ 直接 | `[attr]` | 基类 + 派生类 → 各自独立 `import_class!` |
+| 014 | inheritance_multiple | ✅ 直接 | `[attr]` | 多继承：同上，hicc 把继承展平 |
+| 015 | virtual_basic | ✅ 直接 | `[attr]` | 虚函数按普通方法 → `import_class!`（vtable 由 C++ 管理） |
+| 016 | virtual_pure | ✅ 直接 | `[attr]` | 抽象类无 factory；派生类各自 `import_class!` |
+| 017 | virtual_override | ✅ 直接 | `[attr]` | override 按普通方法 → `import_class!` |
+| 018 | virtual_diamond | ✅ 直接 | `[attr]` | 虚继承菱形：派生类各自 `import_class!` |
+| 019 | operator_overload | 💬 注释式 | `[suggest]` | C++ 保留 `operator+/-/* ==`；rust_gen 在 `lib.rs` 注释中产出 `vec2_add/sub/eq` 命名包装供用户取消注释启用 |
+| 020 | friend_function | ✅ 直接 | `[skip]` | filter 跳过含 `T*` 参数的 friend 函数；仅类方法导出到 `import_class!` |
+| 021 | explicit_ctor | ✅ 直接 | `[attr]` | `explicit` + 静态 create → `import_class!` + `import_lib!` factory |
+| 022 | mutable_member | ✅ 直接 | `[attr]` | mutable 字段对 filter 透明；方法 → `import_class!` |
+| 023 | typeid_rtti | ✅ 直接 | `[skip]` | filter 跳过含基类指针参数的方法；`type_name()` 等自由函数 → `import_lib!` |
+| 024 | template_function | ✅ 直接 | `[attr]` | 函数模板 `max_of<T>` → `import_lib!` 直接用 `#[cpp(func = "int max_of<int>(int, int)")]` |
+| 025 | template_class | ✅ 直接 | `[inject]` | C++ 纯 `template<typename T> class Stack`；rust_gen 在 `hicc::cpp!` 块注入 `using IntStack = Stack<int>` + namespace 级 `create_int_stack/free_int_stack` → `import_class! IntStack` + `import_lib!` factory |
+| 026 | template_specialization | ✅ 直接 | `[inject]` | C++ 纯 `template + 特化`；rust_gen 在 `hicc::cpp!` 块注入 `type_name_int()` 包装调用 `TypeInfo<int>::name()` → `import_lib!` |
+| 027 | template_instantiation | ✅ 直接 | `[inject]` | 同 025，多类型实例化（int + double） → `import_class! IntContainer/DoubleContainer` |
+| 028 | variadic_template | ✅ 直接 | `[inject]` | C++ 纯变参模板；rust_gen 在 `hicc::cpp!` 块注入固定参数包装（`sum_two/sum_three`） → `import_lib!` |
+| 029 | unique_ptr | ✅ 直接 | `[skip]` | PImpl 模式：`Impl` 嵌套类通过 `parentDeclContextId` 被 filter 跳过；`Owner` 类方法 → `import_class!` |
+| 030 | shared_ptr | ✅ 直接 | `[skip]` | 同 029 |
+| 031 | custom_deleter | ✅ 直接 | `[skip]` | 同 029 + 自定义 deleter |
+| 032 | placement_new | ✅ 直接 | `[attr]` | `operator new/delete` 跳过；`Buffer` 包装类 → `import_class!` |
+| 033 | raii_pattern | ✅ 直接 | `[attr]` | 析构由 `free()` 桥接 → `import_class!` + `import_lib!` factory |
+| 034 | vector_basic | ✅ 直接 | `[attr]` | `std::vector<int>` 字段私有；`IntVector` POD 包装类 → `import_class!` |
+| 035 | map_basic | ✅ 直接 | `[attr]` | 同 034，`IntMap` 包装类 → `import_class!` |
+| 036 | string_basic | ✅ 直接 | `[attr]` | `std::string` 字段私有；用 `const char*` C 接口 → `import_class!`（不用 hicc-std） |
+| 037 | array_basic | ✅ 直接 | `[attr]` | 同 034，`FixedArray` 包装类 → `import_class!` |
+| 038 | tuple_basic | ✅ 直接 | `[attr]` | 同 034，`Triple` getter/setter → `import_class!` |
+| 039 | lambda_basic | ✅ 直接 | `[attr]` | lambda 不出现在 AST 顶层；C++ 端用 lambda + 命名包装 → `import_class!` |
+| 040 | std_function | ✅ 直接 | `[attr]` | `std::function` 字段私有；`set_mode/call` 方法 → `import_class!` |
+| 041 | functional_bind | ✅ 直接 | `[attr]` | `std::bind` 不在 AST 顶层；`configure/next` → `import_class!` |
+| 042 | exception_basic | ✅ 直接 | `[attr]` | try/catch + `thread_local` 错误码；`last_error()` 自由函数 → `import_lib!` |
+| 043 | namespace_nested | ✅ 直接 | `[attr]` | 嵌套命名空间 → 折叠为 Rust 短名；`#[cpp(...)]` 保留完整限定名 |
+| 044 | enum_class | ✅ 直接 | `[attr]` | enum class 不直接映射；C++ 端 `color_to_int/int_to_color` 转换 → `import_lib!` |
+| 045 | union_basic | 💬 注释式 | `[suggest]` | C++ 保留原始 `union Value`；rust_gen 在 `lib.rs` 注释中产出 `ValueBox` 包装类供用户取消注释启用 |
+| 046 | constexpr_basic | ✅ 直接 | `[attr]` | constexpr 对 FFI 透明，按普通函数 → `import_lib!` |
+| 047 | noexcept_basic | ✅ 直接 | `[attr]` | 自由函数保留 noexcept → `import_lib!`；成员方法移除 noexcept → `import_class!`（C++ 端 1 处调整） |
+| 048 | summary | ✅ 直接 | `[attr]` | 综合：enum + unique_ptr + exception + namespace + class → 多个 `import_class!` / `import_lib!` |
 
 **统计：**
 
-| 模式 | 数量 | 占比 |
+| 模式 | 机制 | 数量 |
 |------|------|------|
-| ✅ 直接 | 46 | 95.8% |
-| 💬 注释式注入 | 2 | 4.2%（019、045） |
+| ✅ 直接 | `[attr]` 属性 | 39 |
+| ✅ 直接 | `[inject]` 注入 | 4（025-028） |
+| ✅ 直接 | `[skip]` 跳过 | 3（020、029-031 中 029、023；030、031 共享 029 的 skip 逻辑） |
+| 💬 注释式 | `[suggest]` 建议 | 2（019、045） |
 
-## 直接 vs 注入的判定（POC 实测）
+注：020 friend 用 `[skip]`，023 typeid 同时含 `[skip]`（基类指针参数）和 `[attr]`（剩余方法）；上表按主导机制归类。
 
-hicc-build 解析 `#[cpp(...)]` 字符串时，tokenizer 对某些 C++ 语法无能为力。下表是 POC 验证后的硬性边界及对策：
+## 数据流映射：AST → Rust 拼装
 
-| C++ 构造 | 处理方式 | 原因 |
-|---------|---------|------|
-| 函数模板调用 | ✅ 直接 | hicc-build 接受 `max_of<int>(int, int)` 语法 |
-| 类模板成员方法 | ✅ 直接 | rust_gen 在 `hicc::cpp!` 块注入 `using Alias = Stack<int>` + namespace 级 factory |
-| 类模板静态方法（特化） | ✅ 直接 | rust_gen 在 `hicc::cpp!` 块注入 namespace 级包装函数调用 `TypeName<int>::method()` |
-| 变参函数模板 | ✅ 直接 | rust_gen 在 `hicc::cpp!` 块注入 namespace 级固定参数数量包装函数 |
-| `operator+` 等运算符 | 💬 注释式注入 | `+` 不是 path 字符，rust_gen 生成命名包装建议供用户取消注释 |
-| 联合体（union） | 💬 注释式注入 | hicc 无 raw memory API，rust_gen 生成 ValueBox 包装类建议 |
-| noexcept 成员方法 | ✅ 直接（C++ 端 1 处调整） | hicc-build 类型匹配限制；C++ 端从成员方法移除 noexcept |
+`lib.rs` 由 4 个区域组成，每种 rust_gen 机制产生不同区域的代码：
 
-## 两种自动化机制
+```
+lib.rs 结构：
+┌──────────────────────────────────────────────────────────┐
+│ hicc::cpp! {                       ← 区域 A：C++ 头/include + 自动注入  │
+│     #include "hicc_usages/<feature>.h"                              │
+│     [inject] 注入的 typedef + namespace 级 factory（025-028）        │
+│     [suggest] 注释形式的 operator/union 包装（019、045）             │
+│ }                                                                    │
+├──────────────────────────────────────────────────────────┤
+│ hicc::import_class! {              ← 区域 B：类 + 成员方法            │
+│     #[cpp(class = "ns::Foo", destroy = "ns::Foo::free")]            │
+│     pub class Foo {                                                  │
+│         #[cpp(method = "...")]  pub fn method(&self) -> i32;  ← [attr] │
+│     }                                                                │
+│ }                                                                    │
+├──────────────────────────────────────────────────────────┤
+│ hicc::import_lib! {                ← 区域 C：自由函数 + factory      │
+│     #[cpp(func = "...")]       pub fn foo_new() -> Foo;       ← [attr]│
+│     [suggest] 注释形式的 operator 包装 Rust 绑定（019）              │
+│ }                                                                    │
+├──────────────────────────────────────────────────────────┤
+│ // 顶层注释块                       ← 区域 D：union 的 import_class!   │
+│ // [suggest] 注释形式的 ValueBox 包装类（045）                       │
+└──────────────────────────────────────────────────────────┘
+```
 
-1. **✅ 直接**：rust_gen 自动产出 active 代码，crate 默认即可编译运行。涵盖：
-   - `#[cpp(...)]` 属性直接生成（大多数特性）
-   - `hicc::cpp!` 块内活跃注入 typedef/factory/包装函数（025-028 模板）
-   - filter.py 内置跳过规则（020 friend、023 typeid 基类指针参数）
-2. **💬 注释式注入**：rust_gen 在 `lib.rs` 中以注释形式产出建议包装代码；用户取消注释即启用，不取消对 crate 无影响（019 operator、045 union）
+### AST 节点 → Rust 区域映射
+
+| AST 节点（clang） | rust_gen 处理 | 落到 lib.rs 哪个区域 | 典型特性 |
+|------|---------|----------|------|
+| `FunctionDecl`（自由函数，非模板） | 直接生成 `#[cpp(func = "...")]` | 区域 C（`import_lib!`） | 001、004、042 |
+| `CXXRecordDecl` / `ClassDecl` | 生成 `import_class!` 块 + factory | 区域 B + 区域 C | 006、007、013 |
+| `CXXMethodDecl`（成员方法） | 直接生成 `#[cpp(method = "...")]` | 区域 B（`import_class!` 内） | 006、011、015 |
+| `CXXMethodDecl`（static） | 转 `#[cpp(func = "...")]` 自由函数 | 区域 C（`import_lib!` 内） | 010 |
+| `CXXMethodDecl`（operator*/+-） | filter 跳过本体；生成命名包装注释 | 区域 A 注释 + 区域 C 注释 | 019 |
+| `CXXConstructorDecl` / `CXXDestructorDecl` | filter 跳过；用 `create/free` 替代 | 区域 C（factory 函数） | 007、008 |
+| `FunctionTemplateDecl` | 函数模板：`#[cpp(func = "name<int>(...)")]` 直接生成 | 区域 C（`import_lib!`） | 024 |
+| `FunctionTemplateDecl`（变参） | filter 跳过；rust_gen 注入固定参数包装 | 区域 A（注入 C++）+ 区域 C（Rust 绑定） | 028 |
+| `ClassTemplateDecl` | filter 跳过；rust_gen 注入 typedef + factory | 区域 A（注入 C++）+ 区域 B（`import_class!`）+ 区域 C（factory） | 025、027 |
+| `ClassTemplateSpecializationDecl` | filter 跳过；rust_gen 注入 namespace 级包装 | 区域 A（注入 C++）+ 区域 C | 026 |
+| `RecordDecl`（`is_union=true`） | filter 跳过；生成 ValueBox 注释 | 区域 A 注释 + 区域 D 注释 | 045 |
+| `EnumDecl`（enum class） | filter 跳过；C++ 端用 `int` 转换函数 | 区域 C（`import_lib!` 转换函数） | 044 |
+| 含 `T*` 参数的函数/方法 | filter 跳过（hicc-build 类型匹配限制） | 不生成 Rust 绑定 | 020、023 |
+| `ClassTemplateSpecializationDecl`（嵌套类 PImpl） | 通过 `parentDeclContextId` 跳过 | 不生成 Rust 绑定 | 029、030、031 |
+
+### 4 种机制的端到端示例
+
+**`[attr]` 属性（001 hello_world）**
+
+```cpp
+// C++ 端
+namespace hicc_usages::hello_world {
+    void hello();
+    class Greeter { ... static Greeter* create(const char*); ... };
+}
+```
+↓ rust_gen 解析 AST 的 FunctionDecl + CXXMethodDecl
+```rust
+// Rust lib.rs（区域 B + 区域 C）
+hicc::import_class! {
+    #[cpp(class = "hicc_usages::hello_world::Greeter",
+          destroy = "hicc_usages::hello_world::Greeter::free")]
+    pub class Greeter { ... }
+}
+hicc::import_lib! {
+    #![link_name = "hicc_usage_hello_world_adapter"]
+    pub class Greeter;
+    #[cpp(func = "void hicc_usages::hello_world::hello()")]
+    pub fn hello();
+    #[cpp(func = "hicc_usages::hello_world::Greeter * hicc_usages::hello_world::Greeter::create(const char*)")]
+    pub fn greeter_new(msg: *const i8) -> Greeter;
+}
+```
+
+**`[inject]` 注入（025 template_class）**
+
+```cpp
+// C++ 端：纯模板，无任何特化
+template<typename T> class Stack {
+public:
+    void push(T); T pop(); size_t size() const;
+};
+```
+↓ rust_gen 在 `hicc::cpp!` 块内注入活跃 C++ 包装（hicc-build 无法直接处理 `Stack<int>* Stack<int>::create()`，必须 typedef 别名）
+```rust
+// Rust lib.rs（区域 A 注入 + 区域 B 新类 + 区域 C factory）
+hicc::cpp! {
+    #include "hicc_usages/template_class.h"
+    namespace hicc_usages::template_class {
+        using IntStack = Stack<int>;
+        inline IntStack* create_int_stack() { return new IntStack(); }
+        inline void free_int_stack(IntStack* self) { delete self; }
+    }
+}
+hicc::import_class! {
+    #[cpp(class = "hicc_usages::template_class::IntStack",
+          destroy = "hicc_usages::template_class::free_int_stack")]
+    pub class IntStack {
+        #[cpp(method = "void push(int)")] pub fn push(&mut self, v: i32);
+        #[cpp(method = "std::size_t size() const")] pub fn size(&self) -> usize;
+    }
+}
+hicc::import_lib! {
+    #[cpp(func = "hicc_usages::template_class::IntStack * hicc_usages::template_class::create_int_stack()")]
+    pub fn int_stack_new() -> IntStack;
+}
+```
+
+**`[skip]` 跳过（020 friend_function）**
+
+```cpp
+// C++ 端
+class Account {
+    int balance_;
+public:
+    static Account* create(int);
+    void deposit(int);
+    friend void transfer(Account* from, Account* to, int amount);  // 含 T* 参数
+};
+```
+↓ filter.py 跳过 `transfer`（基类指针参数），其他正常生成
+```rust
+// Rust lib.rs（区域 B + 区域 C，注意 friend 函数被跳过）
+hicc::import_class! { ... pub class Account { pub fn deposit(&mut self, amount: i32); } }
+hicc::import_lib! { ... pub fn account_new(initial: i32) -> Account; }
+// transfer 函数未生成（hicc-build 不支持 T* 参数）
+```
+
+**`[suggest]` 注释式建议（019 operator_overload）**
+
+```cpp
+// C++ 端：保留原始 operator
+class Vec2 {
+public:
+    int x_, y_;
+    Vec2 operator+(const Vec2&) const;
+    Vec2 operator*(int s) const;
+    bool operator==(const Vec2&) const;
+};
+```
+↓ rust_gen 检测到 operator 方法，生成注释式命名包装（filter 跳过 operator 本体）
+```rust
+// Rust lib.rs（区域 A 注释 + 区域 C 注释，全部以 // 开头）
+hicc::cpp! {
+    #include "hicc_usages/operator_overload.h"
+    // inline Vec2* vec2_add(const Vec2& a, const Vec2& b) { return new Vec2(a + b); }
+    // inline Vec2* vec2_mul(const Vec2& a, int s) { return new Vec2(a * s); }
+    // inline bool vec2_eq(const Vec2& a, const Vec2& b) { return a == b; }
+}
+hicc::import_lib! {
+    ...
+    // #[cpp(func = "ns::Vec2 * ns::vec2_add(const ns::Vec2&, const ns::Vec2&)")]
+    // pub fn vec2_add(a: &Vec2, b: &Vec2) -> Vec2;
+    // ... 其他 operator 包装也以注释形式列出
+}
+```
+用户取消注释即启用，不取消对 crate 无影响。
+
+### special.yaml 中的机制配置
+
+`[inject]` 机制需要在 special.yaml 显式配置：
+
+```yaml
+# 类模板实例化（[inject]）
+template_class:
+  class_template_instantiations:
+    Stack: [int]            # 实例化 IntStack
+
+# 类模板静态方法（[inject]）
+template_specialization:
+  template_static_wrappers:
+    TypeInfo:
+      - inst: int
+        methods: {name: type_name_int, size_of: size_of_int}
+
+# 变参模板固定参数包装（[inject]）
+variadic_template:
+  variadic_wrappers:
+    sum_all:
+      param_type: int
+      arities: [{arity: 2, name: sum_two}, {arity: 3, name: sum_three}]
+```
+
+其他三种机制（`[attr]` / `[skip]` / `[suggest]`）无需 special.yaml 配置，rust_gen 自动检测。
 
 ## 关键设计决策
 
