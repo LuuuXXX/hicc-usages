@@ -1,0 +1,17 @@
+[package]
+name = "hicc_usage_{{ name }}"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "hicc_usage_{{ name }}"
+path = "src/lib.rs"
+
+[dependencies]
+hicc = { path = "../../../hicc/hicc", version = "0.2" }
+{% if special.extra_deps %}{% for dep in special.extra_deps %}{{ dep }}
+{% endfor %}{% endif %}
+
+[build-dependencies]
+hicc-build = { path = "../../../hicc/hicc-build", version = "0.2" }
+cc = "1"

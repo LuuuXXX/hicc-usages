@@ -1,0 +1,13 @@
+[package]
+name = "example-foo_bar_baz-bar"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["rlib"]
+
+[features]
+cbindgen = ["hicc-rs/cbindgen"]
+
+[dependencies]
+hicc-rs = { path = "../../../hicc-rs" }

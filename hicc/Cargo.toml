@@ -1,0 +1,53 @@
+[workspace]
+resolver = "2"
+members = [
+    "hicc",
+    "hicc-rs",
+    "hicc-rs-macros",
+    "hicc-cbindgen",
+    "hicc-rs-examples/basic_lib",
+    "hicc-rs-examples/foreign_type",
+    "hicc-rs-examples/rust-std",
+    "hicc-rs-examples/async-func",
+    "hicc-rs-examples/foo_bar_baz/bar",
+    "hicc-rs-examples/foo_bar_baz/baz",
+    "hicc-rs-examples/foo_bar_baz/foo",
+    "hicc-autogen",
+    "hicc-build",
+    "hicc-macros",
+    "hicc-std",
+]
+
+exclude = [
+    "hicc-rs-examples/no-std",
+    "hicc-examples/class",
+    "hicc-examples/datas",
+    "hicc-examples/destroy",
+    "hicc-examples/dynamic_cast",
+    "hicc-examples/functional",
+    "hicc-examples/functions",
+    "hicc-examples/hello-world",
+    "hicc-examples/hicc-std",
+    "hicc-examples/interface",
+    "hicc-examples/memory",
+    "hicc-examples/rust_any",
+    "hicc-examples/placement_new",
+    "hicc-examples/stl",
+    "hicc-examples/import_lib_class",
+]
+
+# 定义 workspace 共享依赖, 需要随时和具体子项目的版本号同步, 否则可能会导致版本发布后版本号依赖错误.
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+[workspace.dependencies]
+hicc = { path = "hicc", version = "0.2.4" }
+hicc_autogen = { path = "hicc-autogen", version = "0.2.2" }
+hicc-build = { path = "hicc-build", version = "0.2.2" }
+hicc_macros = { path = "hicc-macros", version = "0.2.2" }
+hicc-std = { path = "hicc-std", version = "0.2.2" }
+hicc-rs = { path = "hicc-rs", version = "0.1.0" }
+hicc-rs-macros = { path = "hicc-rs-macros", version = "0.1.0" }

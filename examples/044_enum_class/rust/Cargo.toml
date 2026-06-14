@@ -1,0 +1,15 @@
+[package]
+name = "hicc_usage_enum_class"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "hicc_usage_enum_class"
+path = "src/lib.rs"
+
+[dependencies]
+hicc = { path = "../../../hicc/hicc", version = "0.2" }
+
+[build-dependencies]
+hicc-build = { path = "../../../hicc/hicc-build", version = "0.2" }
+cc = "1"

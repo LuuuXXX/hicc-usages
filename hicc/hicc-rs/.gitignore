@@ -1,0 +1,16 @@
+# Auto-generated C headers from hicc-cbindgen — should be regenerated on demand
+examples/export_lib/c/hicc_demo.h
+
+# Auto-generated Cython definitions from hicc-cbindgen
+examples/export_lib/python/hicc_demo.pxd
+
+# Companion C header for Cython (generated alongside hicc_demo.pxd)
+examples/export_lib/python/hicc_demo.h
+
+# Cython build artifacts
+examples/export_lib/python/test_demo.c
+examples/export_lib/python/test_demo*.so
+examples/export_lib/python/build/
+
+*.swp
+*.rlib

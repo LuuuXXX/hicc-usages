@@ -1,0 +1,24 @@
+[package]
+name = "hicc-rs"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+authors = [ "hantingjun <hantingjun@huawei.com>" ]
+repository = "https://gitcode.com/xuanwu/hicc"
+description = "Safe, efficient FFI between Rust and C/Python via C ABI with automatic binding generation"
+keywords = ["ffi", "c", "abi", "python", "cbindgen", "ctypes"]
+
+[lib]
+crate-type = ["rlib"]
+
+[features]
+default = ["std"]
+std = []
+export_header = []
+cbindgen = ["hicc-rs-macros/cbindgen", "dep:prettyplease", "std"]
+
+[dependencies]
+hicc-rs-macros = { workspace = true }
+syn = { version = "2.0.117", features = ["full", "visit", "visit-mut"] }
+quote = "1.0.45"
+prettyplease = { version = "0.2", optional = true }

@@ -1,0 +1,21 @@
+[package]
+name = "hicc-rs-macros"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = [ "hantingjun <hantingjun@huawei.com>" ]
+repository = "https://gitcode.com/xuanwu/hicc"
+description = "Proc macros for hicc-rs FFI bindings (export_class, export_lib)"
+
+[lib]
+proc-macro = true
+
+[features]
+cbindgen = []
+
+[dependencies]
+syn = { version = "2", features = ["full", "extra-traits", "fold", "visit-mut"] }
+quote = "1"
+proc-macro2 = "1"
+
+regex-lite = "0.1"

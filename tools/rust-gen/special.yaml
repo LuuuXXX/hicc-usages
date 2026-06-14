@@ -1,0 +1,184 @@
+# special.yaml - 每个 C++ 特性的 Rust 生成策略
+#
+# rust_gen.py 读取 _default 合并到每个特性；filter.py 的硬编码规则是真正生效的过滤逻辑。
+# 每个 feature 的 notes 字段记录该特性的处理方式（直接 / 注释式注入）。
+#
+# 字段说明:
+#   extra_deps: 额外的 Cargo.toml dependencies（行级字符串列表）
+#   notes: 文档备注（含模式标记）
+#   class_template_instantiations: dict，类模板实例化（直接模式，rust_gen 在 hicc::cpp! 块活跃注入 typedef + factory）
+#   template_static_wrappers: dict，类模板静态方法包装（直接模式）
+#   variadic_wrappers: dict，变参模板固定参数包装（直接模式）
+
+_default:
+  extra_deps: []
+  notes: "默认策略：所有类必须自带 static create/free；filter.py 内置 STL/operator/template/class-pointer 跳过规则"
+
+# === Batch 1 (001-016) 简单特性 ===
+hello_world:
+  notes: "untouched C++（直接）：自由函数 void hello() + 简单类 Greeter；全自动"
+
+function_overload:
+  notes: "untouched C++（直接）：重载：rust_gen 加参数类型后缀（add_int_int / add_double_double）"
+
+default_args:
+  notes: "untouched C++（直接）：默认参数：C++ 端建议提供多个命名函数（power_two_args / power_one_arg）"
+
+inline_functions:
+  notes: "untouched C++（直接）：inline 对 FFI 透明；直接 import_lib"
+
+variadic_functions:
+  notes: "untouched C++（直接）：C++ 端预固定参数数量（sum_2/sum_3/sum_4），不用 c_variadic"
+
+class_basic:
+  notes: "untouched C++（直接）：基础类：create/free/get/inc；全自动"
+
+class_constructor:
+  notes: "untouched C++（直接）：有参构造：必须用 static T* create(args)；私有 ctor 由 filter 跳过"
+
+class_copy:
+  notes: "untouched C++（直接）：拷贝构造：filter 跳过；C++ 端提供 clone() 命名包装"
+
+class_move:
+  notes: "untouched C++（直接）：移动语义：filter 跳过 T&&；C++ 端提供 take_from() 命名包装"
+
+class_static:
+  notes: "untouched C++（直接）：静态方法转 import_lib 自由函数（带类名前缀如 counter_get_instance_count）"
+
+class_const:
+  notes: "untouched C++（直接）：const 方法 → &self；非 const → &mut self"
+
+class_volatile:
+  notes: "untouched C++（直接）：volatile 方法：按 &self 处理（Rust 无 volatile）"
+
+inheritance_single:
+  notes: "untouched C++（直接）：单继承：基类和派生类都独立 import_class"
+
+inheritance_multiple:
+  notes: "untouched C++（直接）：多继承：每个类独立 import"
+
+virtual_basic:
+  notes: "untouched C++（直接）：虚函数：rust_gen 当普通方法处理（vtable 由 C++ 端管理）"
+
+virtual_pure:
+  notes: "untouched C++（直接）：纯虚函数：抽象类无 factory；派生类各自 import"
+
+# === Batch 2 (017-032) 中等特性 ===
+virtual_override:
+  notes: "untouched C++（直接）：派生类 override：filter 跳过基类指针参数的方法"
+
+virtual_diamond:
+  notes: "untouched C++（直接）：虚继承菱形：派生类各自 import；C++ 端避免 type() 等关键字"
+
+operator_overload:
+  notes: "untouched C++（注释式注入）：原始 operator+/-/* == 不动，rust_gen 在 lib.rs 的 hicc::cpp! 块和 import_lib! 块中以注释形式自动产出命名包装（vec2_add/sub/eq 等）。用户取消注释即启用"
+
+friend_function:
+  notes: "untouched C++（直接）：filter 跳过 T* 参数（hicc-build 类型匹配限制）；类方法正常导出"
+
+explicit_ctor:
+  notes: "untouched C++（直接）：explicit 构造：用 static T* create(args) 替代"
+
+mutable_member:
+  notes: "untouched C++（直接）：mutable 字段：对 filter 透明（仅 C++ 内部语义）"
+
+typeid_rtti:
+  notes: "untouched C++（直接）：C++ 端包装为 const char* type_name()；filter 跳过基类指针参数"
+
+template_function:
+  notes: "untouched C++（直接）：rust_gen 用 #[cpp(func = \"int max_of<int>(int, int)\")] 直接调用，hicc-build 透传模板语法"
+
+template_class:
+  class_template_instantiations:
+    Stack: [int]
+  notes: "untouched C++（直接）：C++ 端只有 template<typename T> class Stack；rust_gen 在 lib.rs 的 hicc::cpp! 块自动注入 using IntStack = Stack<int> + 命名空间级 create_int_stack/free_int_stack，对应 Rust 端 import_class + factory"
+
+template_specialization:
+  template_static_wrappers:
+    TypeInfo:
+      - inst: int
+        methods: {name: type_name_int, size_of: size_of_int}
+      - inst: double
+        methods: {name: type_name_double, size_of: size_of_double}
+      - inst: char
+        methods: {name: type_name_char, size_of: size_of_char}
+  notes: "untouched C++（直接）：C++ 端只有 template + 特化；rust_gen 在 hicc::cpp! 块自动注入 inline 包装函数 type_name_int() 调用 TypeInfo<int>::name() 等"
+
+template_instantiation:
+  class_template_instantiations:
+    Container: [int, double]
+  notes: "untouched C++（直接）：同 template_class，但实例化 int 和 double 两种类型；rust_gen 自动注入 IntContainer/DoubleContainer 别名 + factory"
+
+variadic_template:
+  variadic_wrappers:
+    sum_all:
+      param_type: int
+      arities: [{arity: 2, name: sum_two}, {arity: 3, name: sum_three}]
+    count_all:
+      param_type: int
+      arities: [{arity: 2, name: count_two}, {arity: 3, name: count_three}]
+    max_all:
+      param_type: int
+      arities: [{arity: 3, name: max_three}]
+  notes: "untouched C++（直接）：C++ 端只有变参模板；rust_gen 在 hicc::cpp! 块自动注入固定参数数量包装函数（sum_two/sum_three 等），调用原变参模板"
+
+unique_ptr:
+  notes: "untouched C++（直接）：PImpl 模式：Impl 嵌套类通过 parentDeclContextId 跳过；Owner 必须声明 ~Owner() 并在 .cpp 定义"
+
+shared_ptr:
+  notes: "untouched C++（直接）：shared_ptr PImpl：同 unique_ptr 模式"
+
+custom_deleter:
+  notes: "untouched C++（直接）：自定义 deleter：同 PImpl 模式；deleter 函数在 .cpp 中定义"
+
+placement_new:
+  notes: "untouched C++（直接）：placement new：用 Buffer 包装类暴露；operator new/delete 不导出；std::size_t 参数已自动映射为 usize（filter 放行）"
+
+# === Batch 3 (033-048) 复杂特性 ===
+raii_pattern:
+  notes: "untouched C++（直接）：RAII：析构在 free() 桥接中调用；class 自带资源管理"
+
+vector_basic:
+  notes: "untouched C++（直接）：std::vector<int> 封装为 IntVector 包装类；对外暴露 POD 接口（不用 hicc-std）"
+
+map_basic:
+  notes: "untouched C++（直接）：std::map<int,int> 封装为 IntMap 包装类；POD 接口"
+
+string_basic:
+  notes: "untouched C++（直接）：std::string 封装为 StringBuf；用 const char* C 接口（不用 hicc-std）"
+
+array_basic:
+  notes: "untouched C++（直接）：std::array<int,N> 封装为 FixedArray；POD 接口"
+
+tuple_basic:
+  notes: "untouched C++（直接）：std::tuple<int,double,int> 封装为 Triple；getter/setter 接口"
+
+lambda_basic:
+  notes: "untouched C++（直接）：lambda 不出现在 AST 顶层；C++ 端用 lambda 实现内部，对外暴露命名包装"
+
+std_function:
+  notes: "untouched C++（直接）：std::function 作为私有字段；set_mode() / call() 暴露给 Rust"
+
+functional_bind:
+  notes: "untouched C++（直接）：std::bind 不出现在 AST 顶层；C++ 端预写 configure/next 接口"
+
+exception_basic:
+  notes: "untouched C++（直接）：try/catch + thread_local 错误码；last_error() 自由函数；不用 hicc::Exception"
+
+namespace_nested:
+  notes: "untouched C++（直接）：嵌套命名空间：rust_gen 折叠到 Rust 短名（保留 #[cpp(...)] 完整限定名）"
+
+enum_class:
+  notes: "untouched C++（直接）：enum class 不直接映射；C++ 端提供 color_to_int/int_to_color 转换函数"
+
+union_basic:
+  notes: "untouched C++（注释式注入）：原始 union Value 不动，rust_gen 在 lib.rs 的 hicc::cpp! 块和文件末尾以注释形式自动产出 ValueBox 包装类（type_tag + from_X / as_X）。用户取消注释即启用。"
+
+constexpr_basic:
+  notes: "untouched C++（直接）：constexpr 对 FFI 透明；按普通函数处理"
+
+noexcept_basic:
+  notes: "untouched C++（直接，C++ 端 1 处调整）：自由函数保留 noexcept（hicc 直接支持），成员方法移除 noexcept（hicc-build 类型匹配限制 — int (T::*)() const 与 int (T::*)() const noexcept 不兼容）"
+
+summary:
+  notes: "untouched C++（直接）：综合：enum + unique_ptr + exception + namespace；演示完整流水线"

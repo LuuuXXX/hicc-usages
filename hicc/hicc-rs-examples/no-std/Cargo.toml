@@ -1,0 +1,19 @@
+[package]
+name = "example-no-std"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+[features]
+cbindgen = ["hicc-rs/cbindgen"]
+
+[dependencies]
+hicc-rs = { path = "../../hicc-rs", default-features = false }
