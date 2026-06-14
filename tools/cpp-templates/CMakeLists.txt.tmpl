@@ -1,0 +1,17 @@
+# CMakeLists.txt template — produces lib<name>.a in build/
+# Replace <NAME> and <SOURCES> placeholders when scaffolding.
+cmake_minimum_required(VERSION 3.10)
+project(<NAME> CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+add_library(<NAME> STATIC <SOURCES>)
+target_include_directories(<NAME> PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_options(<NAME> PRIVATE -Wall -Wextra -fPIC)
+
+# Demo executable (verify the library actually works in pure C++).
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
+    add_executable(<NAME>_demo main.cpp)
+    target_link_libraries(<NAME>_demo PRIVATE <NAME>)
+endif()
