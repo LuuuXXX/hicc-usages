@@ -177,6 +177,40 @@ hicc-usages/
 | ⚠️ 限制标注 | 菱形虚继承、std::tuple、std::bind（README 标注，简化处理）| ~5% |
 | ❌ 不支持 | 函数指针参数、嵌套模板 `vector<vector<int>>` | — |
 
+## 手动处理方案汇总（按模式归类）
+
+每种处理模式对应一套可机械化的 codegen 模板；下表汇总各模式的输入、产物、关键判定字段。
+
+| 模式 | 触发条件（AST 字段）| 手动操作 | Rust 产物 | C++ 产物 |
+|------|----------------------|----------|-----------|----------|
+| ✅ 直接 (自由函数) | `FunctionDecl` 无 class context | `import_lib!` `#[cpp(func="ret name(args)")]` | `pub fn name(args) -> ret` | 不动 |
+| ✅ 直接 (类) | `CXXRecordDecl` + factory + free pair | `import_class!` + `import_lib!` factory | `pub class T` + factory fn | factory/free pair |
+| ✅ 直接 (异常) | `FunctionDecl` body 含 `CXXThrowExpr` | 返回类型从 `T` 改为 `hicc::Exception<T>` | `pub fn f() -> Exception<T>` | 不动 |
+| ✅ 直接 (constexpr) | `FunctionDecl.isConstexpr` | 当作普通函数路径 | 同自由函数 | 不动 |
+| 💬 活跃注入 (类模板) | `ClassTemplateDecl` | `hicc::cpp!` 内 `using FooInt = Foo<int>;` + factory | `pub class FooInt` | typedef+factory 注入 |
+| 💬 活跃注入 (变参模板) | `FunctionTemplateDecl` variadic | `hicc::cpp!` 内固定 arity wrapper | 同自由函数 | wrapper 注入 |
+| 💬 注释式注入 (operator) | `CXXMethodDecl` operator+/-/* 等 | C++ 端写命名包装 `t_add(t*,t*)` | 普通自由函数 | 命名 wrapper |
+| ⚠️ C++ 端调整 (noexcept) | `FunctionDecl.exceptionSpecType=EST_BasicNoexcept` | **修改 C++ 头**：去掉 `noexcept` | 普通方法绑定 | 头文件签名修改 |
+| ⚠️ C++ 端调整 (enum class) | `EnumDecl` (scoped) | C++ 端写 `to_int_*/int_to_*` wrapper | Rust 镜像 `#[repr(i32)] enum` + factory | int 桥接 wrapper |
+| ⚠️ C++ 端调整 (lambda/std::function) | `LambdaExpr` / `std::function` 在签名 | C++ 端写命名 wrapper，把 callable 隐藏到 .cpp | 普通自由函数 | 命名 wrapper |
+| ⚠️ C++ 端调整 (union) | `CXXRecordDecl.isUnion` | C++ 端 `ValueBox` 包装类 + typed setter/getter + tag int | 普通 class 绑定 | 包装类 |
+| ⚠️ 限制标注 (复杂) | 多重虚继承 / `std::tuple` / `std::bind` | README 标注简化处理 | 选择性绑定 | 可能简化 |
+
+## 自动化可行性评估
+
+下表汇总各特性的 rust_gen 自动化难度（参考 `rust_gen/filter.py` 跳过规则与两种产出模式判定）。
+
+| 等级 | 数量 | 代表特性 | 评估依据 |
+|------|------|---------|----------|
+| **高** | 26 | 001-012, 020-024, 029-030, 033, 036, 042-043, 046 | 单一 AST 字段判定，模板化 codegen 即可 |
+| **中** | 16 | 013-017, 025-028, 031-032, 034-035, 037, 044-045, 047 | 多字段联合判定，需要约定 wrapper 命名 |
+| **低** | 6 | 005, 018, 019, 038-041, 048 | 需要人工设计包装结构（菱形继承、tuple 拆解、callable 包装）|
+
+**判定规则**（与 `rust_gen/filter.py` 跳过规则对齐）：
+- **高**：仅依赖 `FunctionDecl/CXXRecordDecl` 顶级字段，模板化可直接生成；
+- **中**：需要二级字段（如 `CXXMethodDecl.isConst`/`exceptionSpecType`），或需要附加 wrapper；
+- **低**：需要人工选择降级策略（菱形虚继承、std::tuple 拆 first/second、lambda 命名包装）。
+
 ## hicc 限制与降级策略
 
 详见 [`docs/hicc-capabilities.md`](./docs/hicc-capabilities.md) § 限制清单。摘要：
