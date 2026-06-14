@@ -29,7 +29,7 @@ hicc::import_lib! {
     #[cpp(func = "std::unique_ptr<friend_function_ns::Account> hicc::make_unique<friend_function_ns::Account, const std::string&, long>(const std::string&, long&&)")]
     pub fn account_new(owner: &hicc_std::string, balance: i64) -> Account;
 
-    // friend function: transparent free function
+    // friend 函数：透明的自由函数
     #[cpp(func = "long friend_function_ns::audit_total(const friend_function_ns::Account&)")]
     pub fn audit_total(a: &Account) -> i64;
 }

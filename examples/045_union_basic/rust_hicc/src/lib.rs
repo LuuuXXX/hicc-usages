@@ -1,4 +1,4 @@
-//! 045_union_basic: union via wrapper accessors
+//! 045_union_basic: 通过包装访问器使用 union
 //!
 //! hicc 模式：C++ 的 `union Value { int i; float f; long l; }` 是 POD（trivially copyable），
 //! 但 hicc 不能直接表达 union 字段。两种应对方式：
@@ -16,8 +16,8 @@ hicc::cpp! {
     #include <hicc/std/string.hpp>
 }
 
-/// Mirror of C++ `union Value { int i; float f; long l; }` as opaque bytes.
-/// POD and trivially copyable — pass by value through FFI (8 bytes).
+/// C++ `union Value { int i; float f; long l; }` 的镜像，以不透明字节表示。
+/// POD 且 trivially copyable —— 跨 FFI 按值传递（8 字节）。
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct Value(pub [u8; 8]);
@@ -25,7 +25,7 @@ pub struct Value(pub [u8; 8]);
 hicc::import_class! {
     #[cpp(class = "union_basic_ns::Box")]
     pub class Box {
-        // Tag returned as int (mirror of enum class Tag)
+        // tag 以 int 返回（enum class Tag 的镜像）
         #[cpp(method = "union_basic_ns::Tag tag() const")]
         pub fn tag_raw(&self) -> i32;
 
@@ -61,7 +61,7 @@ hicc::import_lib! {
 
     class string = hicc_std::string;
 
-    // POD union passed by value (8 bytes)
+    // POD union 按值传递（8 字节）
     #[cpp(func = "int union_basic_ns::value_as_int(union_basic_ns::Value)")]
     pub fn value_as_int(v: Value) -> i32;
 
@@ -90,7 +90,7 @@ hicc::import_lib! {
     pub fn make_box_long(x: i64) -> Box;
 }
 
-// ---- Tag enum mirror (same pattern as 044) ----
+// ---- Tag enum 镜像（与 044 模式相同） ----
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Tag { Int, Float, Long }

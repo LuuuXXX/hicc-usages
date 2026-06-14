@@ -9,7 +9,7 @@ int main() {
         std::cout << "size=" << f->size() << std::endl;
         long avail = read_file(*f);
         std::cout << "avail=" << avail << std::endl;
-    } // unique_ptr dtor → FileHandle dtor → RAII "close"
+    } // unique_ptr 析构 → FileHandle 析构 → RAII "关闭"
     std::cout << "scope exited\n";
     return 0;
 }

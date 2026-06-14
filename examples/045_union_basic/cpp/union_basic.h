@@ -4,17 +4,17 @@
 
 namespace union_basic_ns {
 
-// POD union — trivially copyable, no user-defined ctor/dtor
+// POD union —— trivially copyable，无用户自定义构造/析构
 union Value {
     int i;
     float f;
     long l;
 };
 
-// Tag describing which union member is currently active
+// 标签：描述当前活跃的 union 成员
 enum class Tag : int { Int = 0, Float = 1, Long = 2 };
 
-// Helper functions: accessors + builders (since hicc can't FFI union fields directly)
+// 辅助函数：访问器 + 构造器（hicc 无法直接 FFI union 字段）
 inline int value_as_int(Value v) { return v.i; }
 inline float value_as_float(Value v) { return v.f; }
 inline long value_as_long(Value v) { return v.l; }
@@ -23,7 +23,7 @@ inline Value make_value_int(int x) { Value v; v.i = x; return v; }
 inline Value make_value_float(float x) { Value v; v.f = x; return v; }
 inline Value make_value_long(long x) { Value v; v.l = x; return v; }
 
-// Class that contains a union
+// 包含 union 的类
 class Box {
 public:
     Box(int x);

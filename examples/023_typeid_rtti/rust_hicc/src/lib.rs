@@ -38,7 +38,9 @@ hicc::import_lib! {
     #[cpp(func = "std::unique_ptr<typeid_rtti_ns::DerivedB> hicc::make_unique<typeid_rtti_ns::DerivedB>()")]
     pub fn derived_b_new() -> DerivedB;
 
-    // RTTI wrappers (already provided in C++ header as inline free functions)
+    // RTTI 包装函数（C++ 头文件已提供为 inline 自由函数）。
+    // 同一个 C++ 函数对每个具体派生类需要单独绑定：hicc 无法把 Rust 端 &DerivedA
+    // 自动转 C++ Base&。后缀 `_a` / `_b` 表示该绑定接受的派生类。
     #[cpp(func = "const char* typeid_rtti_ns::type_name_base(const typeid_rtti_ns::Base&)")]
     pub fn type_name_base_a(a: &DerivedA) -> *const i8;
 

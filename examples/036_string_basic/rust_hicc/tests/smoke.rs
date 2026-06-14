@@ -24,5 +24,5 @@ fn string_length_contains() {
     assert_eq!(string_length(&s), 13);
     assert!(contains_substring(&s, &hicc_std::string::from(c"world")));
     assert!(!contains_substring(&s, &hicc_std::string::from(c"xyz")));
-    assert!(contains_substring(&s, &hicc_std::string::from(c"")));  // empty always matches
+    assert!(contains_substring(&s, &hicc_std::string::from(c"")));  // 空串总是匹配
 }

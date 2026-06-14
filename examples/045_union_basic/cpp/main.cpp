@@ -21,7 +21,7 @@ int main() {
     b1.set_float(1.5f);
     std::cout << "after set_float b1 " << b1.describe() << std::endl;
 
-    Box b4 = b2;  // copy ctor
+    Box b4 = b2;  // 拷贝构造
     std::cout << "b4 (copy of b2) " << b4.describe() << std::endl;
     return 0;
 }

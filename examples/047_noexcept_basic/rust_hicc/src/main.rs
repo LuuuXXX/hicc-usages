@@ -25,7 +25,7 @@ fn main() {
     println!("buf.get(0) = {}", buf.get(0));
     println!("buf.get(3) = {}", buf.get(3));
 
-    // may_throw — use Exception<T> path for safety
+    // may_throw —— 为安全起见走 Exception<T> 路径
     match may_throw(5).ok() {
         Ok(v) => println!("may_throw(5) = {}", v),
         Err(e) => println!("caught: {}", e.what()),

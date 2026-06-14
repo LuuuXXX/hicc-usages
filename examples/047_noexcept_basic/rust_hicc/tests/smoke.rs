@@ -34,13 +34,13 @@ fn buffer_get_set() {
     b.set(3, 40);
     assert_eq!(b.get(0), 10);
     assert_eq!(b.get(3), 40);
-    assert_eq!(b.get(1), 0);  // uninit -> 0
+    assert_eq!(b.get(1), 0);  // 未初始化 -> 0
 
-    // out-of-range get -> safe (noexcept)
+    // 越界 get -> 安全（noexcept）
     assert_eq!(b.get(99), 0);
-    // out-of-range set -> safe
+    // 越界 set -> 安全
     b.set(99, 100);
-    assert_eq!(b.get(0), 10);  // unchanged
+    assert_eq!(b.get(0), 10);  // 未改变
 }
 
 #[test]

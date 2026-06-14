@@ -17,7 +17,7 @@ fn raii_factory_and_drop() {
     assert_eq!(n, 4);
     assert_eq!(f.size(), 4);
 
-    // RAII Drop == C++ dtor: simply verify final state before drop.
+    // RAII Drop 等价于 C++ 析构：仅验证 drop 前的最终状态。
     let fd = f.fd();
     drop(f);
     assert_eq!(fd, 11);

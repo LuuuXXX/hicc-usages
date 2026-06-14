@@ -32,7 +32,7 @@ fn main() {
     println!("MAX_CUSTOMERS = {}", *max_customers());
     println!("DEFAULT_DISCOUNT = {}", *default_discount());
 
-    // vector test
+    // vector 测试
     let mut v = vec_new();
     for x in [1, 3, 5, 7, 9] {
         v.push_back(&x);

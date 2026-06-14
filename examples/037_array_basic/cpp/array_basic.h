@@ -5,7 +5,7 @@
 
 namespace array_basic_ns {
 
-// Demonstrates std::array<int, 5>.
+// 演示 std::array<int, 5> 的用法。
 long array_sum(const std::array<int, 5>& a);
 int array_max(const std::array<int, 5>& a);
 double array_avg(const std::array<int, 5>& a);

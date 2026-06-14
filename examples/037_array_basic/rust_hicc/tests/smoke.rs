@@ -18,7 +18,7 @@ fn array_get_set_via_native_api() {
     assert_eq!(*a.get(0).unwrap(), 0);
     assert_eq!(*a.get(4).unwrap(), 4);
     assert!(a.get(5).is_none());
-    // mutate via get_mut
+    // 通过 get_mut 修改
     *a.get_mut(2).unwrap() = 99;
     assert_eq!(*a.get(2).unwrap(), 99);
     assert_eq!(*a.front().unwrap(), 0);

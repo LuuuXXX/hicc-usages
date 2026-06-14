@@ -5,7 +5,7 @@
 
 namespace raii_pattern_ns {
 
-// RAII wrapper around a "file-like" handle: acquires on ctor, releases on dtor.
+// 围绕"类文件"句柄的 RAII 包装：构造时获取，析构时释放。
 class FileHandle {
 public:
     FileHandle(int fd, const std::string& path)
@@ -20,8 +20,8 @@ public:
 
     int fd() const { return fd_; }
     const std::string& path() const { return path_; }
-    long write(const std::string& data);  // returns bytes written
-    long size() const;                     // current buffer size
+    long write(const std::string& data);  // 返回写入字节数
+    long size() const;                     // 当前缓冲区大小
 
 private:
     int fd_;
@@ -30,6 +30,6 @@ private:
 };
 
 std::unique_ptr<FileHandle> open_file(int fd, const std::string& path);
-long read_file(FileHandle& h);  // returns bytes available
+long read_file(FileHandle& h);  // 返回可用字节数
 
 } // namespace raii_pattern_ns

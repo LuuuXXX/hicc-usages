@@ -21,7 +21,7 @@ fn vector_back_front_accessors() {
     v.push_back(&30);
     assert_eq!(*v.front().unwrap(), 10);
     assert_eq!(*v.back().unwrap(), 30);
-    // mutable back
+    // 可变 back
     *v.back_mut().unwrap() += 1;
     assert_eq!(*v.back().unwrap(), 31);
 }

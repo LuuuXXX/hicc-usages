@@ -1,4 +1,4 @@
-//! 039_lambda_basic: lambda expressions
+//! 039_lambda_basic: lambda 表达式
 //!
 //! hicc 模式：C++ lambda 通过 `std::function<R(Args...)>` 跨 FFI 边界。
 //! Rust 端用 `hicc::Function<fn(Args...) -> R>` 接收 / 传递。

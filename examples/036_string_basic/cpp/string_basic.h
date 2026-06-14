@@ -4,7 +4,7 @@
 
 namespace string_basic_ns {
 
-// Demonstrates std::string usage.
+// 演示 std::string 的用法。
 std::string greet(const std::string& name);
 std::string to_upper(const std::string& s);
 std::string concat(const std::string& a, const std::string& b);

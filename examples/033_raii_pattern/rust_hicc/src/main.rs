@@ -19,6 +19,6 @@ fn main() {
     println!("avail={}", read_file(&mut f));
 
     let fd = f.fd();
-    drop(f); // RAII: triggers C++ dtor on release
+    drop(f); // RAII：释放时触发 C++ 析构
     println!("dropped fd={}", fd);
 }

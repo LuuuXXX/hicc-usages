@@ -28,10 +28,10 @@ fn apply_and_compose() {
 #[test]
 fn accumulator_state() {
     let mut acc = BoundAccumulator::new(make_adder(10));
-    // base_ = 0, x = 5 -> fn_(0+5) = 15, base_ becomes 15
+    // base_ = 0, x = 5 -> fn_(0+5) = 15，base_ 变为 15
     assert_eq!(acc.call_and_accumulate(5), 15);
     assert_eq!(acc.base(), 15);
-    // base_ = 15, x = 5 -> fn_(20) = 30, base_ becomes 45
+    // base_ = 15, x = 5 -> fn_(20) = 30，base_ 变为 45
     assert_eq!(acc.call_and_accumulate(5), 30);
     assert_eq!(acc.base(), 45);
 

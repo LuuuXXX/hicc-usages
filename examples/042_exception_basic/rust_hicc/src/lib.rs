@@ -1,4 +1,4 @@
-//! 042_exception_basic: try/catch via hicc::Exception<T>
+//! 042_exception_basic: 通过 hicc::Exception<T> 实现 try/catch
 //!
 //! hicc 模式：把可能抛异常的 C++ 函数声明为返回 `hicc::Exception<T>`。
 //! hicc-build 会在 C++ 侧自动用 `EXPORT_EXCEPT_METHOD`/`EXPORT_EXCEPT_MEMBER_METHOD` 包一层，

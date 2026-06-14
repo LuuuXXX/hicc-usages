@@ -15,7 +15,7 @@ hicc::import_lib! {
     class default_args_ns;
     class string = hicc_std::string;
 
-    // C++: int greet(const std::string&, int times = 1, const std::string& suffix = "!")
+    // C++ 端签名：int greet(const std::string&, int times = 1, const std::string& suffix = "!")
     #[cpp(func = "int default_args_ns::greet(const std::string&, int, const std::string&)")]
     pub fn greet_full(name: &string, times: i32, suffix: &string) -> i32;
 
@@ -25,7 +25,7 @@ hicc::import_lib! {
     #[cpp(func = "int default_args_ns::greet(const std::string&, int, const std::string&)")]
     pub fn greet_default(name: &string) -> i32;
 
-    // C++: int compute(int a, int b = 10, int c = 100)
+    // C++ 端签名：int compute(int a, int b = 10, int c = 100)
     #[cpp(func = "int default_args_ns::compute(int, int, int)")]
     pub fn compute_full(a: i32, b: i32, c: i32) -> i32;
 

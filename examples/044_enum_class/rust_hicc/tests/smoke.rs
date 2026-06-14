@@ -25,7 +25,7 @@ fn color_parse_string() {
     assert_eq!(color_parse(&hicc_std::string::from(c"red")), Color::Red);
     assert_eq!(color_parse(&hicc_std::string::from(c"green")), Color::Green);
     assert_eq!(color_parse(&hicc_std::string::from(c"blue")), Color::Blue);
-    // Unknown → defaults to Red
+    // 未知 → 默认为 Red
     assert_eq!(color_parse(&hicc_std::string::from(c"orange")), Color::Red);
 }
 

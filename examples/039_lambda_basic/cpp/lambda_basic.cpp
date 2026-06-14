@@ -7,7 +7,7 @@ int apply_int(int x, std::function<int(int)> fn) {
 }
 
 std::function<int(int)> make_adder(int add) {
-    return [add](int v) -> int { return v + add; };
+    return [add](int v) -> int { return v + add; };  // 捕获 add
 }
 
 std::function<int(int)> compose(std::function<int(int)> f, std::function<int(int)> g) {

@@ -5,30 +5,30 @@
 
 namespace noexcept_basic_ns {
 
-// noexcept free functions
+// noexcept 自由函数
 int add_noexcept(int a, int b) noexcept;
 int square_noexcept(int x) noexcept;
-double safe_reciprocal_noexcept(double x) noexcept;  // returns 0 if x == 0
+double safe_reciprocal_noexcept(double x) noexcept;  // x == 0 时返回 0
 constexpr int compute_constant() noexcept { return 42; }
 
-// A function that is NOT noexcept (for contrast)
+// 一个不是 noexcept 的函数（用于对比）
 int may_throw(int x);
 
-// Class with noexcept methods
+// 带 noexcept 方法的类
 class SafeCounter {
 public:
     SafeCounter() noexcept;
     void increment(int by) noexcept;
     int get() const noexcept;
     void reset() noexcept;
-    std::string describe() const noexcept;  // std::string may throw under memory pressure, but we mark noexcept
+    std::string describe() const noexcept;  // std::string 在内存压力下可能抛异常，但我们标 noexcept
 private:
     int value_;
 };
 
 std::unique_ptr<SafeCounter> make_counter() noexcept;
 
-// Move-only type with noexcept move ctor
+// 带 noexcept 移动构造的 move-only 类型
 class Buffer {
 public:
     explicit Buffer(size_t n) noexcept;

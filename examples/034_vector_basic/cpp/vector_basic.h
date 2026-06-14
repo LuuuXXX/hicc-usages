@@ -6,7 +6,7 @@
 
 namespace vector_basic_ns {
 
-// Demonstrates std::vector<int> usage.
+// 演示 std::vector<int> 的用法。
 long vector_sum(const std::vector<int>& v);
 double vector_avg(const std::vector<int>& v);
 std::vector<int> build_vector(int from, int to, int step);

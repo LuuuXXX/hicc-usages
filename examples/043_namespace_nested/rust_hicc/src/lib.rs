@@ -1,4 +1,4 @@
-//! 043_namespace_nested: nested namespaces
+//! 043_namespace_nested: 嵌套命名空间
 //!
 //! hicc 模式：完全透明 —— 直接用完整带命名空间的类型签名
 //! `#[cpp(class = "n1::n2::n3::Foo")]` 或 `#[cpp(func = "... n1::n2::n3::foo(...)")]`。

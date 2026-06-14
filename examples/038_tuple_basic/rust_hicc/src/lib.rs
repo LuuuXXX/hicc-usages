@@ -18,7 +18,7 @@ hicc::cpp! {
 hicc::import_class! {
     class string = hicc_std::string;
 
-    // Triple is opaque — no Rust-facing methods; all access via free functions
+    // Triple 是不透明类型 —— 无 Rust 端方法；所有访问都通过自由函数
     #[cpp(class = "tuple_basic_ns::Triple")]
     pub class Triple {
     }

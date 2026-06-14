@@ -1,4 +1,4 @@
-//! 047_noexcept_basic: noexcept is transparent
+//! 047_noexcept_basic: noexcept 是透明的
 //!
 //! hicc 模式：`noexcept` 是 C++ 编译期/运行时合约，对 FFI ABI **完全透明**。
 //! hicc-build 不感知 `noexcept` 关键字，按普通函数绑定即可。

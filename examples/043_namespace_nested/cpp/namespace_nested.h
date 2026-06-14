@@ -40,7 +40,7 @@ std::unique_ptr<Bar> make_bar(const std::string& name);
 
 } // namespace n1
 
-// Top-level namespace alias for testing
+// 顶层命名空间别名，用于测试
 namespace outer {
 namespace deep {
 namespace deeper {

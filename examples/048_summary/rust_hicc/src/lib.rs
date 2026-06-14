@@ -1,4 +1,4 @@
-//! 048_summary: combined showcase
+//! 048_summary: 综合展示
 //!
 //! 混合 5 种模式（来自 042/043/044/046/015）：
 //! 1. 类 `Customer`（构造 + std::string 字段 + std::vector 成员 + Exception 路径）
@@ -14,7 +14,7 @@ hicc::cpp! {
 
     typedef std::vector<int> CppVec;
 
-    // Inline helpers to bridge enum class and CustomerBase& to FFI-friendly forms.
+    // inline 辅助函数：将 enum class 与 CustomerBase& 桥接为 FFI 友好形式。
     inline int customer_tier_int(const summary_ns::Customer& c) {
         return static_cast<int>(c.tier());
     }
@@ -24,7 +24,7 @@ hicc::cpp! {
     }
 }
 
-/// Rust-side mirror of `CustomerTier` enum class.
+/// `CustomerTier` enum class 的 Rust 端镜像。
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CustomerTier { Free = 0, Basic = 1, Premium = 2 }
@@ -40,7 +40,7 @@ hicc::import_class! {
         #[cpp(method = "std::string name() const")]
         pub fn name(&self) -> string;
 
-        // tier() returns CustomerTier in C++ (enum class) — wrap to int via inline
+        // tier() 在 C++ 中返回 CustomerTier（enum class）—— 通过 inline 包装为 int
         pub fn tier(&self) -> CustomerTier {
             let v: i32 = customer_tier_int(self);
             match v {
@@ -96,7 +96,7 @@ hicc::import_lib! {
 
     class RustVec = hicc_std::vector<hicc::Pod<i32>>;
 
-    // Empty vector factory (for doubled_values demo)
+    // 空 vector 工厂（用于 doubled_values 演示）
     #[cpp(func = "std::unique_ptr<CppVec> hicc::make_unique<CppVec>()")]
     pub fn vec_new() -> RustVec;
 
@@ -106,22 +106,22 @@ hicc::import_lib! {
     #[cpp(func = "std::unique_ptr<summary_ns::VipCustomer> summary_ns::make_vip(double)")]
     pub fn make_vip(discount_rate: f64) -> VipCustomer;
 
-    // compute_discounted_price takes CustomerBase& — wrap via inline helper for VipCustomer
+    // compute_discounted_price 接收 CustomerBase& —— 对 VipCustomer 通过 inline 辅助函数包装
     #[cpp(func = "double discounted_price_vip(const summary_ns::VipCustomer&, double)")]
     pub fn compute_discounted_price(c: &VipCustomer, price: f64) -> f64;
 
-    // std::vector<int> free function (from 034 pattern)
+    // std::vector<int> 自由函数（来自 034 模式）
     #[cpp(func = "std::vector<int> summary_ns::doubled_values(const std::vector<int>&)")]
     pub fn doubled_values(v: &RustVec) -> RustVec;
 
-    // Static constexpr data (from 046 pattern)
+    // 静态 constexpr 数据（来自 046 模式）
     #[cpp(data = "summary_ns::Settings::MAX_CUSTOMERS")]
     pub fn max_customers() -> &'static i32;
 
     #[cpp(data = "summary_ns::Settings::DEFAULT_DISCOUNT")]
     pub fn default_discount() -> &'static f64;
 
-    // inline helper that returns Customer::tier() as int
+    // inline 辅助函数：将 Customer::tier() 以 int 返回
     #[cpp(func = "int customer_tier_int(const summary_ns::Customer&)")]
     pub fn customer_tier_int(c: &Customer) -> i32;
 }

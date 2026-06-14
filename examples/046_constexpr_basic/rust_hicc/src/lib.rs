@@ -1,4 +1,4 @@
-//! 046_constexpr_basic: constexpr static data + constexpr methods
+//! 046_constexpr_basic: constexpr 静态数据 + constexpr 方法
 //!
 //! hicc 模式：
 //! 1. **静态 constexpr 数据成员**：用 `#[cpp(data = "ns::Class::FIELD")]` 暴露，
@@ -29,7 +29,7 @@ hicc::import_class! {
 hicc::import_lib! {
     #![link_name = "constexpr_basic"]
 
-    // Static constexpr data exposed as &'static references
+    // 静态 constexpr 数据以 &'static 引用暴露
     #[cpp(data = "constexpr_basic_ns::Constants::PI")]
     pub fn pi() -> &'static f64;
 
@@ -45,7 +45,7 @@ hicc::import_lib! {
     #[cpp(data = "constexpr_basic_ns::Constants::BIG_NUMBER")]
     pub fn big_number() -> &'static i64;
 
-    // constexpr free functions — transparent
+    // constexpr 自由函数 —— 透明
     #[cpp(func = "int constexpr_basic_ns::square(int)")]
     pub fn square(x: i32) -> i32;
 

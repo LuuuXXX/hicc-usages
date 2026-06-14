@@ -4,7 +4,7 @@
 
 namespace constexpr_basic_ns {
 
-// Static constexpr data members — exposed as &'static
+// 静态 constexpr 数据成员 —— 暴露为 &'static
 struct Constants {
     static constexpr double PI = 3.14159265358979;
     static constexpr double E  = 2.71828182845905;
@@ -13,7 +13,7 @@ struct Constants {
     static constexpr long   BIG_NUMBER = 9000000000L;
 };
 
-// constexpr functions (note: constexpr is transparent at runtime)
+// constexpr 函数（注意：constexpr 在运行期是透明的）
 constexpr int square(int x) { return x * x; }
 constexpr long factorial(int n) {
     long r = 1;
@@ -21,7 +21,7 @@ constexpr long factorial(int n) {
     return r;
 }
 
-// Class with constexpr methods — wrap as normal method
+// 带 constexpr 方法的类 —— 按普通方法包装
 class Circle {
 public:
     constexpr explicit Circle(double radius) : radius_(radius) {}
@@ -32,10 +32,10 @@ private:
     double radius_;
 };
 
-// Helper to compute area at runtime via the constexpr method
+// 辅助函数：在运行期通过 constexpr 方法计算面积
 double compute_area(double radius);
 
-// Wrapper returning const reference to constexpr static data
+// 返回 constexpr 静态数据 const 引用的包装
 const double& get_pi();
 const int& get_buffer_size();
 const long& get_big_number();

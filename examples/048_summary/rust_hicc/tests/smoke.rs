@@ -15,22 +15,22 @@ fn customer_lifecycle() {
     assert_eq!(c.tier(), CustomerTier::Basic);
     assert_eq!(cs(&c.describe()), "Customer(1, alice, basic)");
 
-    // charge + total
+    // charge + total（充值 + 累计）
     c.charge(50).ok().unwrap();
     c.charge(100).ok().unwrap();
     assert_eq!(c.purchase_count(), 2);
     assert_eq!(c.total_spent(), 150);
 
-    // purchase_at out-of-range -> Exception
+    // purchase_at 越界 -> Exception
     let err = c.purchase_at(99).ok().unwrap_err();
     assert!(err.what().contains("out of range"));
     assert_eq!(c.purchase_at(0).ok().unwrap(), 50);
 
-    // charge negative -> Exception
+    // charge 负值 -> Exception
     let err = c.charge(-5).ok().unwrap_err();
     assert!(err.what().contains("positive"));
 
-    // rename
+    // 重命名
     let new_name = hicc_std::string::from(c"bob");
     c.rename(&new_name);
     assert_eq!(cs(&c.name()), "bob");
@@ -43,7 +43,7 @@ fn customer_tier_upgrade() {
     assert!(c.upgrade(CustomerTier::Premium as i32).ok().is_ok());
     assert_eq!(c.tier(), CustomerTier::Premium);
 
-    // downgrade should fail
+    // 降级应失败
     let err = c.upgrade(CustomerTier::Free as i32).ok().unwrap_err();
     assert!(err.what().contains("cannot downgrade"));
     assert_eq!(c.tier(), CustomerTier::Premium);

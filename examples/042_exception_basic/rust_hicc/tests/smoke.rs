@@ -14,18 +14,18 @@ fn bank_account_deposit_and_overdraw() {
     acc.deposit(50).ok().unwrap();
     assert_eq!(acc.balance(), 150);
 
-    // withdraw too much -> error
+    // 取款过多 -> 错误
     let err = acc.withdraw(1000).ok().unwrap_err();
     assert!(err.what().contains("insufficient funds"));
-    // balance should not have changed
+    // 余额不应改变
     assert_eq!(acc.balance(), 150);
 
-    // withdraw valid
+    // 合法取款
     let got = acc.withdraw(50).ok().unwrap();
     assert_eq!(got, 50);
     assert_eq!(acc.balance(), 100);
 
-    // deposit negative
+    // 存入负值
     let err = acc.deposit(-5).ok().unwrap_err();
     assert!(err.what().contains("non-negative"));
 }

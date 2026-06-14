@@ -5,7 +5,7 @@
 
 namespace map_basic_ns {
 
-// Demonstrates std::map<int, std::string>.
+// 演示 std::map<int, std::string> 的用法。
 void put(std::map<int, std::string>& m, int key, const std::string& val);
 std::string get_or(const std::map<int, std::string>& m, int key, const std::string& def);
 size_t map_size(const std::map<int, std::string>& m);

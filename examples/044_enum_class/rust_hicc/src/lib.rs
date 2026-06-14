@@ -1,4 +1,4 @@
-//! 044_enum_class: enum class via int<->enum converters
+//! 044_enum_class: 通过 int<->enum 转换器使用 enum class
 //!
 //! hicc 模式：`enum class` 不能直接 FFI（hicc 端无法表达 C++ scoped enum 的 ABI），
 //! 所以 C++ 侧写 `*_to_int` / `*_from_int` 转换器，Rust 侧定义对应的 `#[repr(i32)] enum`
@@ -13,7 +13,7 @@ hicc::cpp! {
     #include "enum_class.h"
     #include <hicc/std/string.hpp>
 
-    // Inline wrappers that return/accept int directly to bridge enum class
+    // 直接返回/接收 int 的 inline 包装，用于桥接 enum class
     inline int light_current_int(const enum_class_ns::Light& l) {
         return static_cast<int>(l.current());
     }
@@ -22,12 +22,12 @@ hicc::cpp! {
     }
 }
 
-/// Rust-side mirror of `enum_class_ns::Color`. Sent across FFI as `i32`.
+/// `enum_class_ns::Color` 的 Rust 端镜像。跨 FFI 以 `i32` 传输。
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Color { Red = 0, Green = 1, Blue = 2 }
 
-/// Rust-side mirror of `enum_class_ns::Status`. Sent across FFI as `i32`.
+/// `enum_class_ns::Status` 的 Rust 端镜像。跨 FFI 以 `i32` 传输。
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Status { Active = 10, Inactive = 20, Pending = 30 }
@@ -38,7 +38,7 @@ hicc::import_class! {
         #[cpp(method = "int brightness() const")]
         pub fn brightness(&self) -> i32;
 
-        // Bridge to int-returning inline wrapper
+        // 桥接到返回 int 的 inline 包装
         pub fn current(&self) -> Color {
             let v: i32 = light_current_int(self);
             color_from_int(v)
@@ -73,11 +73,11 @@ hicc::import_lib! {
     #[cpp(func = "enum_class_ns::Status enum_class_ns::status_from_int(int)")]
     pub fn status_from_int_raw(v: i32) -> i32;
 
-    // Light factory takes Color — wrap to int via inline wrapper
+    // Light 工厂接收 Color —— 通过 inline 包装转 int
     #[cpp(func = "enum_class_ns::Light enum_class_ns::make_light(enum_class_ns::Color)")]
     pub fn make_light_raw(initial: i32) -> Light;
 
-    // Inline wrappers from cpp! block
+    // cpp! 块中的 inline 包装
     #[cpp(func = "int light_current_int(const enum_class_ns::Light&)")]
     pub fn light_current_int(l: &Light) -> i32;
 
@@ -85,7 +85,7 @@ hicc::import_lib! {
     pub fn light_set_int(l: &mut Light, c: i32);
 }
 
-// ---- Type-safe Rust wrappers ----
+// ---- 类型安全的 Rust 包装 ----
 
 pub fn color_to_int(c: Color) -> i32 { color_to_int_raw(c as i32) }
 pub fn color_from_int(v: i32) -> Color {
