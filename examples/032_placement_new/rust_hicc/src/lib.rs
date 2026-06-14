@@ -10,16 +10,16 @@ hicc::cpp! {
 
     using BufferH = placement_new_ns::Buffer;
 
-    inline void* cd_place(void* raw, int v) {
+    inline void* pn_place(void* raw, int v) {
         return placement_new_ns::place_payload_raw(raw, v);
     }
-    inline int cd_value(void* p) {
+    inline int pn_value(void* p) {
         return static_cast<placement_new_ns::Payload*>(p)->value();
     }
-    inline void cd_set(void* p, int v) {
+    inline void pn_set(void* p, int v) {
         static_cast<placement_new_ns::Payload*>(p)->set(v);
     }
-    inline void cd_destroy(void* p) {
+    inline void pn_destroy(void* p) {
         placement_new_ns::destroy_payload(static_cast<placement_new_ns::Payload*>(p));
     }
 }
@@ -40,16 +40,16 @@ hicc::import_lib! {
     #[cpp(func = "std::unique_ptr<BufferH> hicc::make_unique<BufferH, size_t>(size_t&&)")]
     pub fn buffer_new(sz: usize) -> Buffer;
 
-    #[cpp(func = "void* cd_place(void*, int)")]
+    #[cpp(func = "void* pn_place(void*, int)")]
     pub fn place_payload_raw(raw: *mut std::ffi::c_void, value: i32) -> *mut std::ffi::c_void;
 
-    #[cpp(func = "int cd_value(void*)")]
+    #[cpp(func = "int pn_value(void*)")]
     pub fn payload_value(p: *mut std::ffi::c_void) -> i32;
 
-    #[cpp(func = "void cd_set(void*, int)")]
+    #[cpp(func = "void pn_set(void*, int)")]
     pub fn payload_set(p: *mut std::ffi::c_void, v: i32);
 
-    #[cpp(func = "void cd_destroy(void*)")]
+    #[cpp(func = "void pn_destroy(void*)")]
     pub fn destroy_payload(p: *mut std::ffi::c_void);
 }
 

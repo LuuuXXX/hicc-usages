@@ -17,3 +17,12 @@ fn friend_audit_total() {
     assert_eq!(audit_total(&a), 1000);
     assert_eq!(audit_total(&b), 2500);
 }
+
+#[test]
+fn friend_accesses_private_field() {
+    let owner = hicc_std::string::from(c"Carol");
+    let a = Account::new(&owner, 500);
+    let b = Account::new(&owner, 750);
+    // friend function 能读 private balance_ 字段，跨多个实例求和
+    assert_eq!(audit_total(&a) + audit_total(&b), 1250);
+}

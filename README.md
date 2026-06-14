@@ -140,7 +140,7 @@ hicc-usages/
 - **中**：需要决策（命名、arity 组合、参数传递方式），但模板可枚举
 - **低**：需要语义理解（如 RTTI/operator 重载的 cpp! 包装怎么写）
 
-## 已踩坑记录（批次 A 实战经验）
+## 踩坑总览（48 示例实战经验）
 
 | 坑 | 现象 | 解决 |
 |---|---|---|
@@ -207,20 +207,20 @@ find examples/ -name build -type d -exec rm -rf {} + 2>/dev/null
 | P2: 特性矩阵设计 | ✅ | `docs/feature-matrix-draft.md` + 6 批分组 |
 | P3 批 A: C++ 项目 | ✅ | 001-008 standalone/make/cmake 全通过 |
 | P4 批 A: AST 导出 | ✅ | 8 个 `user-ast.json` |
-| P5 批 A: Rust crate | ✅ | 8 个 crate cargo test 通过 |
+| P5 批 A: Rust crate | ✅ | 8 个 crate cargo test 通过（22 个 smoke test） |
 | P3 批 B: C++ 项目 | ✅ | 009-016 standalone/make/cmake 全通过 |
 | P4 批 B: AST 导出 | ✅ | 8 个 `user-ast.json` |
-| P5 批 B: Rust crate | ✅ | 8 个 crate cargo test 通过 |
+| P5 批 B: Rust crate | ✅ | 8 个 crate cargo test 通过（18 个 smoke test） |
 | P3 批 C: C++ 项目 | ✅ | 017-024 standalone/make/cmake 全通过 |
 | P4 批 C: AST 导出 | ✅ | 8 个 `user-ast.json` |
-| P5 批 C: Rust crate | ✅ | 8 个 crate cargo test 通过（共 14 个 smoke test） |
+| P5 批 C: Rust crate | ✅ | 8 个 crate cargo test 通过（18 个 smoke test） |
 | P3 批 D: C++ 项目 | ✅ | 025-032 standalone/make/cmake 全通过 |
 | P4 批 D: AST 导出 | ✅ | 8 个 `user-ast.json` |
-| P5 批 D: Rust crate | ✅ | 8 个 crate cargo test 通过（共 15 个 smoke test） |
+| P5 批 D: Rust crate | ✅ | 8 个 crate cargo test 通过（17 个 smoke test） |
 | P3 批 E: C++ 项目 | ✅ | 033-040 standalone/make/cmake 全通过 |
 | P4 批 E: AST 导出 | ✅ | 8 个 `user-ast.json` |
-| P5 批 E: Rust crate | ✅ | 8 个 crate cargo test 通过（共 16 个 smoke test） |
+| P5 批 E: Rust crate | ✅ | 8 个 crate cargo test 通过（16 个 smoke test） |
 | P3 批 F: C++ 项目 | ✅ | 041-048 standalone/make/cmake 全通过 |
 | P4 批 F: AST 导出 | ✅ | 8 个 `user-ast.json` |
-| P5 批 F: Rust crate | ✅ | 8 个 crate cargo test 通过（共 28 个 smoke test） |
-| P6: README 矩阵 | ✅ | 本文件，48 行全量 |
+| P5 批 F: Rust crate | ✅ | 8 个 crate cargo test 通过（28 个 smoke test） |
+| P6: README 矩阵 | ✅ | 本文件，48 行全量；合计 119 个 smoke test |
