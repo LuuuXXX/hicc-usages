@@ -1,5 +1,18 @@
 #pragma once
+#include <string>
+#include <iostream>
 
-// b has a default value of 10 in C++. Rust can't express defaults, so we expose
-// the full signature and let callers pass the default explicitly.
-int add(int a, int b = 10);
+namespace default_args_ns {
+
+inline int greet(const std::string& name, int times = 1, const std::string& suffix = "!") {
+    for (int i = 0; i < times; ++i) {
+        std::cout << "Hello, " << name << suffix << std::endl;
+    }
+    return times;
+}
+
+inline int compute(int a, int b = 10, int c = 100) {
+    return a + b + c;
+}
+
+} // namespace default_args_ns

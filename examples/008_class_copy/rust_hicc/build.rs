@@ -1,22 +1,17 @@
-use std::path::PathBuf;
-
 fn main() {
-    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let cpp_dir = manifest_dir.join("../cpp");
+    let cpp_dir = std::path::PathBuf::from("../cpp");
+    let mut build = hicc_build::Build::new();
+    use std::ops::DerefMut;
+    let cc_build: &mut cc::Build = build.deref_mut();
+    cc_build.include(&cpp_dir).include(".").cpp(true)
+            .file(cpp_dir.join("class_copy.cpp"));
 
-    // hicc-build parses src/lib.rs and compiles the generated C++ adapter.
-    // .include(cpp_dir) lets the adapter find class_copy.h (Deref<Target=cc::Build>).
-    hicc_build::Build::new()
-        .rust_file("src/lib.rs")
-        .include(&cpp_dir)
-        .compile("class_copy_hicc");
+    build.rust_file("src/lib.rs").compile("class_copy");
 
-    // Link the externally-built C++ static library (../cpp/build/libclass_copy.a).
-    let cpp_build = manifest_dir.join("../cpp/build");
-    println!("cargo::rustc-link-search=native={}", cpp_build.display());
     println!("cargo::rustc-link-lib=class_copy");
+    #[cfg(not(all(target_os = "windows", target_env = "msvc")))]
     println!("cargo::rustc-link-lib=stdc++");
-
-    println!("cargo::rerun-if-changed=../cpp/build/libclass_copy.a");
     println!("cargo::rerun-if-changed=src/lib.rs");
+    println!("cargo::rerun-if-changed=../cpp/class_copy.cpp");
+    println!("cargo::rerun-if-changed=../cpp/class_copy.h");
 }

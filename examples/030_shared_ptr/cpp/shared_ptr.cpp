@@ -1,10 +1,18 @@
 #include "shared_ptr.h"
 
-int RefCounted::count_ = 0;
+namespace shared_ptr_ns {
 
-std::shared_ptr<RefCounted> make_shared_obj() {
-    return std::make_shared<RefCounted>();
+std::shared_ptr<Counter> make_counter(int start) {
+    return std::make_shared<Counter>(start);
 }
 
-void shared_obj_free(RefCounted* r) { delete r; }
-int  shared_count() { return RefCounted::count(); }
+std::shared_ptr<Counter> clone_counter(const std::shared_ptr<Counter>& other) {
+    return other;
+}
+
+long use_count(const std::shared_ptr<Counter>& p) {
+    return p.use_count();
+}
+
+int shared_ptr_anchor() { return 30; }
+}

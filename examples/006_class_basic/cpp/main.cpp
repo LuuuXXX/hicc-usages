@@ -1,13 +1,12 @@
 #include "class_basic.h"
-#include <iostream>
 
 int main() {
-    Counter* c = counter_new();
-    std::cout << "init:         " << c->get() << std::endl;
-    c->inc(); c->inc(); c->inc();
-    std::cout << "after 3x inc: " << c->get() << std::endl;
-    c->reset();
-    std::cout << "after reset:  " << c->get() << std::endl;
-    counter_free(c);
+    class_basic_ns::Counter c("demo");
+    c.inc();
+    c.inc();
+    c.inc_by(10);
+    std::cout << "name=" << c.name() << " count=" << c.count() << std::endl;
+    c.reset();
+    std::cout << "after reset, count=" << c.count() << std::endl;
     return 0;
 }

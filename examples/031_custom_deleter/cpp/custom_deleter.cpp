@@ -1,21 +1,40 @@
 #include "custom_deleter.h"
-#include <cstdio>
-#include <unistd.h>
 
-void FileClose::operator()(FileHandle* h) const { file_close(h); }
+namespace custom_deleter_ns {
 
-void file_close(FileHandle* h) {
-    if (h) {
-        // In a real impl: ::close(h->fd);
-        std::printf("closing fd %d\n", h->fd);
-        delete h;
-    }
+IntArrayPtr make_int_array(size_t n) {
+    int* p = new int[n];
+    for (size_t i = 0; i < n; ++i) p[i] = static_cast<int>(i * i);
+    return IntArrayPtr(p);
 }
 
-std::unique_ptr<FileHandle, FileClose> open_file(int fd) {
-    return std::unique_ptr<FileHandle, FileClose>(new FileHandle{fd});
+int read_at(const IntArrayPtr& arr, size_t i) {
+    return arr[i];
 }
 
-FileHandle* file_open(int fd) {
-    return new FileHandle{fd};
+size_t bytes_allocated(size_t n) {
+    return n * sizeof(int);
+}
+
+int custom_deleter_status() {
+    return 1;
+}
+
+IntArrayHandle* make_int_array_handle(size_t n) {
+    return new IntArrayHandle{make_int_array(n), n};
+}
+
+int handle_read_at(const IntArrayHandle* h, size_t i) {
+    return h->ptr[i];
+}
+
+void destroy_int_array_handle(IntArrayHandle* h) {
+    delete h;
+}
+
+size_t handle_size(const IntArrayHandle* h) {
+    return h->size;
+}
+
+int custom_deleter_anchor() { return 31; }
 }

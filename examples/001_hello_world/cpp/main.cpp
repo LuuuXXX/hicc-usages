@@ -1,8 +1,7 @@
 #include "hello_world.h"
-#include <iostream>
 
 int main() {
-    std::cout << hello("hicc") << std::endl;
-    std::cout << "add(2, 3) = " << add(2, 3) << std::endl;
+    hello_world_ns::hello_world();
+    std::cout << "answer = " << hello_world_ns::answer() << std::endl;
     return 0;
 }

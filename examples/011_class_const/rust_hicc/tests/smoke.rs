@@ -1,14 +1,32 @@
-use class_const::vec2_new;
+use class_const::*;
 
-#[test]
-fn magnitude_3_4_5() {
-    let v = vec2_new(3.0, 4.0);
-    assert!((v.magnitude() - 5.0).abs() < 1e-9);
+fn show(s: &hicc_std::string) -> String {
+    let cs = unsafe { std::ffi::CStr::from_ptr(s.c_str()) };
+    cs.to_str().unwrap().to_string()
 }
 
 #[test]
-fn dot_product() {
-    let a = vec2_new(1.0, 2.0);
-    let b = vec2_new(3.0, 4.0);
-    assert!((a.dot(&b) - 11.0).abs() < 1e-9);
+fn const_read_and_mutate() {
+    let t = Temperature::new(25.0);
+    assert_eq!(t.value(), 25.0);
+    assert_eq!(show(&t.unit()), "C");
+    assert!((t.to_fahrenheit() - 77.0).abs() < 0.001);
+}
+
+#[test]
+fn convert_to_f() {
+    let mut t = Temperature::new(0.0);
+    let f = hicc_std::string::from(c"F");
+    t.convert_to(&f);
+    assert!((t.value() - 32.0).abs() < 0.001);
+    assert_eq!(show(&t.unit()), "F");
+}
+
+#[test]
+fn set_value_and_unit() {
+    let u = hicc_std::string::from(c"F");
+    let mut t = Temperature::new_with_unit(50.0, &u);
+    t.set_value(70.0);
+    assert_eq!(t.value(), 70.0);
+    assert_eq!(show(&t.unit()), "F");
 }

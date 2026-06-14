@@ -1,13 +1,13 @@
-use variadic_functions::{sum2, sum3};
+use variadic_functions::*;
 
 #[test]
-fn fixed_arity_sum2() {
-    assert_eq!(sum2(10, 20), 30);
-    assert_eq!(sum2(-5, 5), 0);
+fn sum_ints_works() {
+    let total = unsafe { sum_ints()(4, 1, 2, 3, 4) };
+    assert_eq!(total, 10);
 }
 
 #[test]
-fn fixed_arity_sum3() {
-    assert_eq!(sum3(1, 2, 3), 6);
-    assert_eq!(sum3(-1, -2, -3), -6);
+fn sum_ints_one() {
+    let total = unsafe { sum_ints()(1, 42) };
+    assert_eq!(total, 42);
 }

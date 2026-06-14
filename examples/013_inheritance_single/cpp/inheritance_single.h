@@ -1,28 +1,39 @@
 #pragma once
+#include <string>
+#include <iostream>
 
-// Single inheritance. Rust side treats the derived class as an independent
-// import_class! — hicc has no notion of C++ inheritance. Public methods
-// inherited from the base are exposed by re-declaring them on the derived
-// (or by exposing them through forwarding methods).
+namespace inheritance_single_ns {
 
-class Shape {
+class Animal {
 public:
-    virtual ~Shape() = default;
-    virtual int area() const = 0;
-    int id() const { return id_; }
+    Animal(const std::string& name) : name_(name) {
+        std::cout << "Animal(" << name_ << ")" << std::endl;
+    }
+    virtual ~Animal() {
+        std::cout << "~Animal(" << name_ << ")" << std::endl;
+    }
+
+    const std::string& name() const { return name_; }
+    virtual std::string sound() const { return "?"; }
+    virtual int legs() const = 0;
+
 protected:
-    explicit Shape(int id) : id_(id) {}
-    int id_;
+    std::string name_;
 };
 
-class Square : public Shape {
+class Dog : public Animal {
 public:
-    explicit Square(int side) : Shape(1), side_(side) {}
-    int area() const override { return side_ * side_; }
-    int side() const { return side_; }
-private:
-    int side_;
+    Dog(const std::string& name) : Animal(name) {}
+    std::string sound() const override { return "Woof"; }
+    int legs() const override { return 4; }
+    std::string breed() const { return "Unknown"; }
 };
 
-Square* square_new(int side);
-void     square_free(Square* s);
+class Cat : public Animal {
+public:
+    Cat(const std::string& name) : Animal(name) {}
+    std::string sound() const override { return "Meow"; }
+    int legs() const override { return 4; }
+};
+
+} // namespace inheritance_single_ns

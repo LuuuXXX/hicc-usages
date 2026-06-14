@@ -1,27 +1,35 @@
 #pragma once
+#include <string>
+#include <iostream>
 
-// explicit constructor: prevents implicit conversion. From Rust's perspective
-// there's no difference — still bound through a factory function.
+namespace explicit_ctor_ns {
 
-class Celsius {
+// explicit 阻止隐式转换；FFI 端透明
+class Distance {
 public:
-    explicit Celsius(double v) : value_(v) {}
-    double value() const { return value_; }
+    explicit Distance(double meters) : meters_(meters) {}
+    explicit Distance(int whole_meters, int cm)
+        : meters_(whole_meters + cm / 100.0) {}
+
+    double meters() const { return meters_; }
+    void add(const Distance& other) { meters_ += other.meters_; }
+
 private:
-    double value_;
+    double meters_;
 };
 
-class Fahrenheit {
+class Wrapper {
 public:
-    Celsius to_celsius() const;
-    explicit Fahrenheit(double v) : value_(v) {}
-    double value() const { return value_; }
+    // explicit + 多参数
+    explicit Wrapper(const std::string& tag, int level)
+        : tag_(tag), level_(level) {}
+
+    const std::string& tag() const { return tag_; }
+    int level() const { return level_; }
+
 private:
-    double value_;
+    std::string tag_;
+    int level_;
 };
 
-Celsius*   celsius_new(double v);
-Fahrenheit* fahrenheit_new(double v);
-void       celsius_free(Celsius*);
-void       fahrenheit_free(Fahrenheit*);
-Celsius    convert_to_celsius(const Fahrenheit& f);  // wrapper for explicit conv
+} // namespace explicit_ctor_ns

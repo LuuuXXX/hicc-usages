@@ -1,37 +1,49 @@
 #pragma once
+#include <string>
+#include <iostream>
 
-// Diamond inheritance with virtual base — hicc has no direct support.
-// Limitation: rather than try to model the diamond, we simplify to a
-// single concrete class that combines the behavior of the two middle tiers
-// (a common pragmatic refactoring when crossing the FFI boundary).
+namespace virtual_diamond_ns {
 
+// 经典菱形继承：Device 是虚基类
 class Device {
 public:
+    Device(const std::string& id) : id_(id) {
+        std::cout << "Device(" << id_ << ")" << std::endl;
+    }
     virtual ~Device() = default;
-    virtual int priority() const = 0;
+    const std::string& id() const { return id_; }
+    virtual std::string category() const { return "Device"; }
+protected:
+    std::string id_;
 };
 
 class InputDevice : virtual public Device {
 public:
-    virtual int read() = 0;
+    InputDevice(const std::string& id) : Device(id) {}
+    std::string category() const override { return "Input"; }
+    virtual int read() { return 0; }
 };
 
 class OutputDevice : virtual public Device {
 public:
-    virtual void write(int v) = 0;
+    OutputDevice(const std::string& id) : Device(id) {}
+    std::string category() const override { return "Output"; }
+    virtual void write(int v) {}
 };
 
-// Combined: collapses InputDevice + OutputDevice + Device into one concrete
-// class. This is the simplification documented in README.
-class Console : public InputDevice, public OutputDevice {
+// 派生类只调用一次虚基类的构造
+class IOCombo : public InputDevice, public OutputDevice {
 public:
-    Console() : value_(0) {}
-    int  priority() const override { return 5; }
-    int  read() override { int v = value_; value_ = 0; return v; }
-    void write(int v) override { value_ = v; }
+    IOCombo(const std::string& id)
+        : Device(id), InputDevice(id), OutputDevice(id) {}
+    std::string category() const override { return "IOCombo"; }
+    int read() override { return last_input_; }
+    void write(int v) override { last_output_ = v; }
+    int last_input() const { return last_input_; }
+    int last_output() const { return last_output_; }
 private:
-    int value_;
+    int last_input_ = 42;
+    int last_output_ = 0;
 };
 
-Console* console_new();
-void     console_free(Console* c);
+} // namespace virtual_diamond_ns

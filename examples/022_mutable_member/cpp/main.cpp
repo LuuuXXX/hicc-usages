@@ -1,11 +1,10 @@
 #include "mutable_member.h"
-#include <iostream>
 
 int main() {
-    Cache* c = cache_new();
-    std::cout << "compute(5) = " << c->compute(5) << std::endl;
-    std::cout << "compute(5) = " << c->compute(5) << std::endl;  // cached
-    std::cout << "last = " << c->last_cached() << std::endl;
-    cache_free(c);
+    using namespace mutable_member_ns;
+    Query q("user:1");
+    std::cout << "exec1: " << q.execute() << std::endl;
+    std::cout << "exec2: " << q.execute() << std::endl;
+    std::cout << "call_count=" << q.call_count() << std::endl;
     return 0;
 }

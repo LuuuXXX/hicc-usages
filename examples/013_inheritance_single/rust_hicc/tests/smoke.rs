@@ -1,10 +1,25 @@
-use inheritance_single::square_new;
+use inheritance_single::*;
+
+fn show(s: &hicc_std::string) -> String {
+    let cs = unsafe { std::ffi::CStr::from_ptr(s.c_str()) };
+    cs.to_str().unwrap().to_string()
+}
 
 #[test]
-fn derived_class_with_inherited_method() {
-    let s = square_new(4);
-    assert_eq!(s.area(), 16);
-    assert_eq!(s.side(), 4);
-    // id() is inherited from Shape but exposed through Square:
-    assert_eq!(s.id(), 1);
+fn dog_polymorphism() {
+    let n = hicc_std::string::from(c"Rex");
+    let d = Dog::new(&n);
+    assert_eq!(show(&d.name()), "Rex");
+    assert_eq!(show(&d.sound()), "Woof");
+    assert_eq!(d.legs(), 4);
+    assert_eq!(show(&d.breed()), "Unknown");
+}
+
+#[test]
+fn cat_polymorphism() {
+    let n = hicc_std::string::from(c"Mimi");
+    let c = Cat::new(&n);
+    assert_eq!(show(&c.name()), "Mimi");
+    assert_eq!(show(&c.sound()), "Meow");
+    assert_eq!(c.legs(), 4);
 }

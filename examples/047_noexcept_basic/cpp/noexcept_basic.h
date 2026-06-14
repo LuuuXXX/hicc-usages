@@ -1,20 +1,47 @@
 #pragma once
+#include <string>
+#include <memory>
+#include <iostream>
 
-// ⚠️ hicc's #[cpp(method = "...")] does not accept `noexcept`.
-// This is the ONLY example in the project where the C++ side is modified
-// to accommodate hicc: the original `int add(int, int) noexcept` is
-// demoted to `int add(int, int)` so the signature can be expressed in
-// hicc's attribute. (No-throw guarantees still hold at runtime; we just
-// can't say so in the cross-FFI signature.)
+namespace noexcept_basic_ns {
 
-struct SafeAdder {
-    int base;
-    // Original: int add(int x) const noexcept;   ← hicc cannot bind
-    // Adjusted:                                       ↓ no `noexcept`
-    int add(int x) const;
-    int sub(int x) const;
-    int combined(int x, int y) const;
+// noexcept free functions
+int add_noexcept(int a, int b) noexcept;
+int square_noexcept(int x) noexcept;
+double safe_reciprocal_noexcept(double x) noexcept;  // returns 0 if x == 0
+constexpr int compute_constant() noexcept { return 42; }
+
+// A function that is NOT noexcept (for contrast)
+int may_throw(int x);
+
+// Class with noexcept methods
+class SafeCounter {
+public:
+    SafeCounter() noexcept;
+    void increment(int by) noexcept;
+    int get() const noexcept;
+    void reset() noexcept;
+    std::string describe() const noexcept;  // std::string may throw under memory pressure, but we mark noexcept
+private:
+    int value_;
 };
 
-SafeAdder* safe_adder_new(int base);
-void safe_adder_free(SafeAdder* s);
+std::unique_ptr<SafeCounter> make_counter() noexcept;
+
+// Move-only type with noexcept move ctor
+class Buffer {
+public:
+    explicit Buffer(size_t n) noexcept;
+    Buffer(Buffer&& other) noexcept;
+    Buffer& operator=(Buffer&& other) noexcept;
+    size_t size() const noexcept;
+    int get(size_t idx) const noexcept;
+    void set(size_t idx, int value) noexcept;
+private:
+    int* data_;
+    size_t size_;
+};
+
+std::unique_ptr<Buffer> make_buffer(size_t n) noexcept;
+
+} // namespace noexcept_basic_ns

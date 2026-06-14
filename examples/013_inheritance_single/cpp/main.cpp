@@ -1,9 +1,13 @@
 #include "inheritance_single.h"
-#include <iostream>
 
 int main() {
-    Square* s = square_new(4);
-    std::cout << "area=" << s->area() << " side=" << s->side() << " id=" << s->id() << std::endl;
-    square_free(s);
+    using namespace inheritance_single_ns;
+    Dog d("Rex");
+    Cat c("Mimi");
+    std::cout << d.name() << " says " << d.sound() << " legs=" << d.legs() << std::endl;
+    std::cout << c.name() << " says " << c.sound() << " legs=" << c.legs() << std::endl;
+
+    Animal* a = &d;
+    std::cout << "via base: " << a->name() << " " << a->sound() << std::endl;
     return 0;
 }

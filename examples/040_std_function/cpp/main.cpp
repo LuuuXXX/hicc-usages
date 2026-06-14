@@ -1,11 +1,18 @@
 #include "std_function.h"
-#include <iostream>
 
 int main() {
-    std::cout << "add_op(2,3) = " << add_op(2, 3) << std::endl;
-    std::cout << "run_binary_op(2,3,0) = " << run_binary_op(2, 3, 0) << std::endl;
-    std::cout << "run_binary_op(2,3,1) = " << run_binary_op(2, 3, 1) << std::endl;
-    std::cout << "compose_then_add_then_mul(2,10,3) = "
-              << compose_then_add_then_mul(2, 10, 3) << std::endl;
+    using namespace std_function_ns;
+    auto dbl = [](int v) { return v * 2; };
+    std::cout << "apply_dbl = " << apply_dbl(dbl, 5) << std::endl;
+
+    auto cb = make_callback([](int v) { return v + 100; });
+    std::cout << "cb.invoke(1) = " << cb->invoke(1) << std::endl;
+    std::cout << "cb.call_n_times(2, 3) = " << cb->call_n_times(2, 3) << std::endl;
+
+    cb->replace([](int v) { return v * v; });
+    std::cout << "after replace cb.invoke(3) = " << cb->invoke(3) << std::endl;
+
+    auto d = make_doubler();
+    std::cout << "chain(d, +5, 3) = " << chain(d, [](int v){return v+5;}, 3) << std::endl;
     return 0;
 }

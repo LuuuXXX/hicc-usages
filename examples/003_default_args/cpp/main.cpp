@@ -1,8 +1,11 @@
 #include "default_args.h"
-#include <iostream>
 
 int main() {
-    std::cout << "add(5)      = " << add(5) << std::endl;       // default b=10
-    std::cout << "add(5, 20)  = " << add(5, 20) << std::endl;
+    default_args_ns::greet("Alice");
+    default_args_ns::greet("Bob", 2);
+    default_args_ns::greet("Carol", 3, "?");
+    std::cout << "compute(1) = " << default_args_ns::compute(1) << std::endl;
+    std::cout << "compute(1, 2) = " << default_args_ns::compute(1, 2) << std::endl;
+    std::cout << "compute(1, 2, 3) = " << default_args_ns::compute(1, 2, 3) << std::endl;
     return 0;
 }

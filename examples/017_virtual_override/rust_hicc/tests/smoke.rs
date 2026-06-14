@@ -1,17 +1,23 @@
-use std::ffi::CStr;
-use virtual_override::{error_logger_new, info_logger_new, string_new};
+use virtual_override::*;
+
+fn show(s: &hicc_std::string) -> String {
+    let cs = unsafe { std::ffi::CStr::from_ptr(s.c_str()) };
+    cs.to_str().unwrap().to_string()
+}
 
 #[test]
-fn override_dispatches_correctly() {
-    let i = info_logger_new();
-    let e = error_logger_new();
+fn triangle_override_only_sides() {
+    let n = hicc_std::string::from(c"tri1");
+    let t = Triangle::new(&n);
+    assert_eq!(show(&t.name()), "tri1");
+    assert_eq!(t.sides(), 3);
+    assert_eq!(show(&t.describe()), "tri1/sides=3");
+}
 
-    let msg = string_new(b"hello\0".as_ptr() as *const i8);
-    let info_out = i.format(&msg);
-    let err_out = e.format(&msg);
-
-    unsafe {
-        assert_eq!(CStr::from_ptr(info_out.c_str()).to_bytes(), b"[INFO] hello");
-        assert_eq!(CStr::from_ptr(err_out.c_str()).to_bytes(),  b"[ERROR] hello");
-    }
+#[test]
+fn pentagon_override_describe_too() {
+    let n = hicc_std::string::from(c"pent1");
+    let p = Pentagon::new(&n);
+    assert_eq!(p.sides(), 5);
+    assert_eq!(show(&p.describe()), "pent1(pentagon)");
 }

@@ -1,24 +1,14 @@
 #pragma once
-
 #include <map>
 #include <string>
-#include <cstddef>
+#include <iostream>
 
-// std::map<std::string, int>. Expose insert/size/get as methods.
+namespace map_basic_ns {
 
-class StringIntMap {
-public:
-    StringIntMap() = default;
-    void insert(const std::string& k, int v) { data_[k] = v; }
-    std::size_t size() const { return data_.size(); }
-    bool contains(const std::string& k) const { return data_.count(k) > 0; }
-    int get_or(const std::string& k, int def) const {
-        auto it = data_.find(k);
-        return it == data_.end() ? def : it->second;
-    }
-private:
-    std::map<std::string, int> data_;
-};
+// Demonstrates std::map<int, std::string>.
+void put(std::map<int, std::string>& m, int key, const std::string& val);
+std::string get_or(const std::map<int, std::string>& m, int key, const std::string& def);
+size_t map_size(const std::map<int, std::string>& m);
+long sum_key_values(const std::map<int, std::string>& m);
 
-StringIntMap* str_int_map_new();
-void          str_int_map_free(StringIntMap* m);
+} // namespace map_basic_ns

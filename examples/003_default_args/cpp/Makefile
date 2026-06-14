@@ -1,28 +1,14 @@
-# Makefile template — mirrors standalone.sh
-# Replace default_args and default_args.cpp placeholders when scaffolding.
-NAME := default_args
 CXX ?= g++
-CXX_FLAGS ?= -O2 -std=c++17 -Wall -Wextra -fPIC
-SOURCES := default_args.cpp
-OBJECTS := $(addprefix build/,$(SOURCES:.cpp=.o))
+CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra -I.
+OUT ?= /tmp/default_args_make
 
-HERE := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+$(OUT): default_args.cpp main.cpp default_args.h
+	$(CXX) $(CXXFLAGS) default_args.cpp main.cpp -o $(OUT)
 
-.PHONY: all clean demo
-
-all: build/lib$(NAME).a
-
-build:
-	mkdir -p build
-
-build/%.o: %.cpp | build
-	$(CXX) $(CXX_FLAGS) -I$(HERE) -c $< -o $@
-
-build/lib$(NAME).a: $(OBJECTS)
-	ar rcs $@ $^
-
-demo: build/lib$(NAME).a
-	$(CXX) $(CXX_FLAGS) -I$(HERE) main.cpp -Lbuild -l$(NAME) -o build/$(NAME)_demo
+run: $(OUT)
+	$(OUT)
 
 clean:
-	rm -rf build
+	rm -f $(OUT)
+
+.PHONY: run clean

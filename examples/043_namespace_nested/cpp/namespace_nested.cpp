@@ -1,17 +1,47 @@
 #include "namespace_nested.h"
 
-namespace outer::inner::core {
-    int add(int a, int b) { return a + b; }
-    int mul(int a, int b) { return a * b; }
+namespace n1 {
+namespace n2 {
+namespace n3 {
+
+Foo::Foo() : value_(0) {}
+Foo::Foo(int v) : value_(v) {}
+int Foo::value() const { return value_; }
+void Foo::set_value(int v) { value_ = v; }
+std::string Foo::describe() const { return "Foo(" + std::to_string(value_) + ")"; }
+
+std::unique_ptr<Foo> make_foo(int v) {
+    return std::unique_ptr<Foo>(new Foo(v));
 }
 
-namespace outer::inner::util {
-    int combined(int a, int b, int c) {
-        using namespace outer::inner::core;
-        return add(add(a, b), c);
-    }
+int compute(int x) { return x * x + 1; }
+
+} // namespace n3
+} // namespace n2
+
+namespace inner {
+
+Bar::Bar() : name_("anonymous") {}
+Bar::Bar(const std::string& name) : name_(name) {}
+std::string Bar::name() const { return name_; }
+void Bar::rename(const std::string& new_name) { name_ = new_name; }
+
+std::unique_ptr<Bar> make_bar(const std::string& name) {
+    return std::unique_ptr<Bar>(new Bar(name));
 }
 
-int ns_add(int a, int b) { return outer::inner::core::add(a, b); }
-int ns_mul(int a, int b) { return outer::inner::core::mul(a, b); }
-int ns_combined(int a, int b, int c) { return outer::inner::util::combined(a, b, c); }
+} // namespace inner
+} // namespace n1
+
+namespace outer {
+namespace deep {
+namespace deeper {
+
+int add(int a, int b) { return a + b; }
+int triple(int x) { return x * 3; }
+
+} // namespace deeper
+} // namespace deep
+} // namespace outer
+
+int namespace_nested_anchor() { return 43; }

@@ -1,27 +1,42 @@
-// RAII: destroy= fires on Rust Drop → calls lock_free → ~Lock() releases.
-// The C++ destructor is the RAII cleanup point; hicc maps it transparently.
+//! 033_raii_pattern: RAII / Drop
+//!
+//! hicc 模式：使用 `import_class!` + `make_unique` 工厂。
+//! Rust 端 FileHandle 离开作用域时 Drop = C++ unique_ptr 的释放
+//! （等价于触发 C++ FileHandle 的析构 = RAII 资源回收）。
+//! 因此不需要绑 `consume_*` —— Rust Drop 自动表达 RAII。
 
 hicc::cpp! {
     #include "raii_pattern.h"
+    #include <hicc/std/string.hpp>
 }
 
 hicc::import_class! {
-    #[cpp(class = "Lock", destroy = "lock_free")]
-    pub class Lock {
-        #[cpp(method = "int id() const")]
-        pub fn id(&self) -> i32;
+    class string = hicc_std::string;
 
-        #[cpp(method = "bool is_locked() const")]
-        pub fn is_locked(&self) -> bool;
+    #[cpp(class = "raii_pattern_ns::FileHandle")]
+    pub class FileHandle {
+        #[cpp(method = "int fd() const")]
+        pub fn fd(&self) -> i32;
 
-        #[cpp(method = "void release()")]
-        pub fn release(&mut self);
+        #[cpp(method = "const std::string& path() const")]
+        pub fn path(&self) -> &string;
+
+        #[cpp(method = "long write(const std::string&)")]
+        pub fn write(&mut self, data: &string) -> i64;
+
+        #[cpp(method = "long size() const")]
+        pub fn size(&self) -> i64;
+
+        pub fn open(fd: i32, path: &string) -> Self { open_file(fd, path) }
     }
 }
 
 hicc::import_lib! {
-    #![link_name = "raii_pattern_hicc"]
+    #![link_name = "raii_pattern"]
 
-    #[cpp(func = "Lock* lock_new(int)")]
-    pub fn lock_new(id: i32) -> Lock;
+    #[cpp(func = "std::unique_ptr<raii_pattern_ns::FileHandle> hicc::make_unique<raii_pattern_ns::FileHandle, int, const std::string&>(int&&, const std::string&)")]
+    pub fn open_file(fd: i32, path: &hicc_std::string) -> FileHandle;
+
+    #[cpp(func = "long raii_pattern_ns::read_file(raii_pattern_ns::FileHandle&)")]
+    pub fn read_file(h: &mut FileHandle) -> i64;
 }

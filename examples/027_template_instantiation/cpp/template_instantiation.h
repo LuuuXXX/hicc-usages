@@ -1,16 +1,28 @@
 #pragma once
+#include <string>
+#include <iostream>
 
-// Explicit instantiation. The template is defined in the header, and the .cpp
-// emits the explicit instantiation `template class Stack<int>;` so the symbols
-// exist in libtemplate_instantiation.a.
+namespace template_instantiation_ns {
 
 template <typename T>
-class Stack {
+class Pair {
 public:
-    Stack() = default;
-    void push(T v) { data_ = v; }    // simplified: single-slot
-    T    pop() { T v = data_; data_ = T{}; return v; }
-    bool empty() const { return data_ == T{}; }
+    Pair(T first, T second) : first_(first), second_(second) {}
+    T first() const { return first_; }
+    T second() const { return second_; }
+    T sum() const { return first_ + second_; }
+    void swap() {
+        T tmp = first_;
+        first_ = second_;
+        second_ = tmp;
+    }
 private:
-    T data_{};
+    T first_;
+    T second_;
 };
+
+// 显式实例化声明
+extern template class Pair<int>;
+extern template class Pair<std::string>;
+
+} // namespace template_instantiation_ns

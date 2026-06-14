@@ -2,8 +2,19 @@
 #include <iostream>
 
 int main() {
-    std::cout << "sq(5) = " << sq(5) << std::endl;
-    std::cout << "cube(3) = " << cube(3) << std::endl;
-    std::cout << "square_plus_magic(4) = " << square_plus_magic(4) << std::endl;
+    using namespace constexpr_basic_ns;
+    std::cout << "PI = " << Constants::PI << std::endl;
+    std::cout << "E = " << Constants::E << std::endl;
+    std::cout << "BUFFER_SIZE = " << Constants::BUFFER_SIZE << std::endl;
+    std::cout << "MAX_TRIES = " << Constants::MAX_TRIES << std::endl;
+    std::cout << "BIG_NUMBER = " << Constants::BIG_NUMBER << std::endl;
+
+    std::cout << "square(7) = " << square(7) << std::endl;
+    std::cout << "factorial(5) = " << factorial(5) << std::endl;
+
+    Circle c(2.0);
+    std::cout << "circle.area() = " << c.area() << std::endl;
+    std::cout << "compute_area(2.0) = " << compute_area(2.0) << std::endl;
+
     return 0;
 }

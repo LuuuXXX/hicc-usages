@@ -1,4 +1,5 @@
 #include "inheritance_multiple.h"
 
-Sprite* sprite_new(int w, int h) { return new Sprite(w, h); }
-void    sprite_free(Sprite* s)   { delete s; }
+namespace inheritance_multiple_ns {
+int inheritance_multiple_anchor() { return 14; }
+}

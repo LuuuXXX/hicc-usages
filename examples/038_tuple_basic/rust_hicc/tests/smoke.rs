@@ -1,13 +1,23 @@
-use std::ffi::CStr;
-use tuple_basic::triple_new;
+use tuple_basic::*;
+
+fn show(s: &hicc_std::string) -> String {
+    let cs = unsafe { std::ffi::CStr::from_ptr(s.c_str()) };
+    cs.to_str().unwrap().to_string()
+}
 
 #[test]
-fn tuple_via_named_accessors() {
-    let t = triple_new(42, b"hello\0".as_ptr() as *const i8, 3.14);
-    assert_eq!(t.first(), 42);
-    let s = t.second();
-    unsafe {
-        assert_eq!(CStr::from_ptr(s.c_str()).to_bytes(), b"hello");
-    }
-    assert!((t.third() - 3.14).abs() < 1e-9);
+fn tuple_create_and_read_fields() {
+    let t = make_triple(7, &hicc_std::string::from(c"alice"), 9.5);
+    assert_eq!(triple_id(&t), 7);
+    assert_eq!(show(&triple_name(&t)), "alice");
+    assert_eq!(triple_score(&t), 9.5);
+}
+
+#[test]
+fn tuple_set_fields() {
+    let mut t = make_triple(1, &hicc_std::string::from(c"bob"), 1.0);
+    set_id(&mut t, 100);
+    set_score(&mut t, 50.5);
+    assert_eq!(triple_id(&t), 100);
+    assert_eq!(triple_score(&t), 50.5);
 }

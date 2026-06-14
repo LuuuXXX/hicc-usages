@@ -1,26 +1,38 @@
-// Point: parameterized constructor exposed via factory `point_new(x, y)`.
+//! 007_class_constructor: 多构造函数 + 析构。
+//!
+//! hicc 模式：每个构造函数一个工厂 + Rust 关联函数包装
 
 hicc::cpp! {
     #include "class_constructor.h"
+    #include <hicc/std/string.hpp>
 }
 
 hicc::import_class! {
-    #[cpp(class = "Point", destroy = "point_free")]
-    pub class Point {
-        #[cpp(method = "int get_x() const")]
-        pub fn get_x(&self) -> i32;
+    class string = hicc_std::string;
 
-        #[cpp(method = "int get_y() const")]
-        pub fn get_y(&self) -> i32;
+    #[cpp(class = "class_ctor_ns::Widget")]
+    pub class Widget {
+        #[cpp(method = "const std::string& name() const")]
+        pub fn name(&self) -> &string;
 
-        #[cpp(method = "int manhattan() const")]
-        pub fn manhattan(&self) -> i32;
+        #[cpp(method = "int value() const")]
+        pub fn value(&self) -> i32;
+
+        pub fn new() -> Self { widget_default() }
+        pub fn from_int(v: i32) -> Self { widget_from_int(v) }
+        pub fn from_named(name: string, v: i32) -> Self { widget_from_named(name, v) }
     }
 }
 
 hicc::import_lib! {
-    #![link_name = "class_constructor_hicc"]
+    #![link_name = "class_constructor"]
 
-    #[cpp(func = "Point* point_new(int, int)")]
-    pub fn point_new(x: i32, y: i32) -> Point;
+    #[cpp(func = "std::unique_ptr<class_ctor_ns::Widget> hicc::make_unique<class_ctor_ns::Widget>()")]
+    pub fn widget_default() -> Widget;
+
+    #[cpp(func = "std::unique_ptr<class_ctor_ns::Widget> hicc::make_unique<class_ctor_ns::Widget, int>(int&&)")]
+    pub fn widget_from_int(v: i32) -> Widget;
+
+    #[cpp(func = "std::unique_ptr<class_ctor_ns::Widget> hicc::make_unique<class_ctor_ns::Widget, std::string, int>(std::string&&, int&&)")]
+    pub fn widget_from_named(name: hicc_std::string, v: i32) -> Widget;
 }

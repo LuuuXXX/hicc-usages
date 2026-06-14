@@ -1,11 +1,15 @@
 #include "raii_pattern.h"
-#include <iostream>
 
 int main() {
+    using namespace raii_pattern_ns;
     {
-        Lock* l = lock_new(7);
-        std::cout << "id=" << l->id() << " locked=" << l->is_locked() << std::endl;
-        lock_free(l);  // RAII release fires
-    }
+        auto f = open_file(3, "/tmp/raii_demo.txt");
+        f->write("hello");
+        f->write(" world");
+        std::cout << "size=" << f->size() << std::endl;
+        long avail = read_file(*f);
+        std::cout << "avail=" << avail << std::endl;
+    } // unique_ptr dtor → FileHandle dtor → RAII "close"
+    std::cout << "scope exited\n";
     return 0;
 }

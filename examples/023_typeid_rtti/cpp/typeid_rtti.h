@@ -1,39 +1,35 @@
 #pragma once
-
 #include <string>
 #include <typeinfo>
+#include <iostream>
 
-// RTTI: typeid() and dynamic type info. Exposed via named accessor functions
-// that return type name strings (raw typeid() results are not FFI-safe).
+namespace typeid_rtti_ns {
 
-class Shape {
+class Base {
 public:
-    virtual ~Shape() = default;
-    virtual int area() const = 0;
+    virtual ~Base() = default;
+    virtual std::string name() const { return "Base"; }
 };
 
-class Circle : public Shape {
+class DerivedA : public Base {
 public:
-    explicit Circle(int r) : r_(r) {}
-    int area() const override { return 3 * r_ * r_; }  // pi ≈ 3
-private:
-    int r_;
+    std::string name() const override { return "DerivedA"; }
 };
 
-class Triangle : public Shape {
+class DerivedB : public Base {
 public:
-    Triangle(int b, int h) : b_(b), h_(h) {}
-    int area() const override { return b_ * h_ / 2; }
-private:
-    int b_, h_;
+    std::string name() const override { return "DerivedB"; }
 };
 
-// Named RTTI accessors — Rust binds these.
-const char* type_name_of(const Shape* s);   // calls typeid(*s).name()
-const char* static_type_name_circle();
-const char* static_type_name_triangle();
+// RTTI 包装：返回类的 mangled 名
+inline const char* type_name_base(const Base& b) {
+    return typeid(b).name();
+}
+inline bool same_type(const Base& a, const Base& b) {
+    return typeid(a) == typeid(b);
+}
+inline bool is_derived_a(const Base& b) {
+    return typeid(b) == typeid(DerivedA);
+}
 
-Circle*   circle_new(int r);
-Triangle* triangle_new(int b, int h);
-void      shape_free_circle(Circle* c);
-void      shape_free_triangle(Triangle* t);
+} // namespace typeid_rtti_ns

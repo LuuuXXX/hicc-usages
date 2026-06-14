@@ -1,24 +1,35 @@
 #pragma once
+#include <string>
+#include <iostream>
 
-// Partial / full specialization. We provide a primary template, a full
-// specialization for `bool`, and a wrapper that lets Rust call either.
+namespace template_specialization_ns {
 
+// 通用模板
 template <typename T>
-struct TypeName {
-    static const char* get() { return "generic"; }
+struct TypeInfo {
+    static const char* name() { return "unknown"; }
+    static std::string describe(const T& v) { return "value=" + std::to_string(v); }
 };
 
+// 偏特化：int
 template <>
-struct TypeName<bool> {
-    static const char* get() { return "bool"; }
+struct TypeInfo<int> {
+    static const char* name() { return "int"; }
+    static std::string describe(const int& v) { return "int(" + std::to_string(v) + ")"; }
 };
 
+// 偏特化：double
 template <>
-struct TypeName<int> {
-    static const char* get() { return "int"; }
+struct TypeInfo<double> {
+    static const char* name() { return "double"; }
+    static std::string describe(const double& v) { return "double(" + std::to_string(v) + ")"; }
 };
 
-// Rust binds these wrappers; each calls the appropriate specialization.
-const char* type_name_int();
-const char* type_name_bool();
-const char* type_name_generic();
+// 偏特化：std::string
+template <>
+struct TypeInfo<std::string> {
+    static const char* name() { return "string"; }
+    static std::string describe(const std::string& v) { return "string(" + v + ")"; }
+};
+
+} // namespace template_specialization_ns

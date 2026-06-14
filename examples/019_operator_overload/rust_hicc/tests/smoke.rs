@@ -1,18 +1,37 @@
-use operator_overload::{vec2_add, vec2_eq, vec2_new, vec2_sub};
+use operator_overload::*;
 
 #[test]
-fn operator_via_named_wrapper() {
-    let a = vec2_new(1, 2);
-    let b = vec2_new(3, 4);
+fn binary_ops() {
+    let a = Vec2::new(1.0, 2.0);
+    let b = Vec2::new(3.0, 4.0);
+    let c = vec_add(&a, &b);
+    assert!((c.x() - 4.0).abs() < 0.001);
+    assert!((c.y() - 6.0).abs() < 0.001);
+    let d = vec_sub(&a, &b);
+    assert!((d.x() + 2.0).abs() < 0.001);
+    assert!((d.y() + 2.0).abs() < 0.001);
+}
 
-    let c = vec2_add(&a, &b);
-    assert_eq!(c.x(), 4);
-    assert_eq!(c.y(), 6);
+#[test]
+fn scale_neg_eq_at() {
+    let a = Vec2::new(1.0, 2.0);
+    let e = vec_scale(&a, 2.0);
+    assert!((e.x() - 2.0).abs() < 0.001);
+    let f = vec_neg(&a);
+    assert!((f.x() + 1.0).abs() < 0.001);
 
-    let d = vec2_sub(&b, &a);
-    assert_eq!(d.x(), 2);
-    assert_eq!(d.y(), 2);
+    let b = Vec2::new(1.0, 2.0);
+    assert!(vec_eq(&a, &b));
 
-    assert!(!vec2_eq(&a, &b));
-    assert!(vec2_eq(&a, &vec2_new(1, 2)));
+    assert!((vec_at(&a, 0) - 1.0).abs() < 0.001);
+    assert!((vec_at(&a, 1) - 2.0).abs() < 0.001);
+}
+
+#[test]
+fn compound_assign() {
+    let mut g = Vec2::new(0.0, 0.0);
+    let a = Vec2::new(1.0, 2.0);
+    vec_iadd(&mut g, &a);
+    assert!((g.x() - 1.0).abs() < 0.001);
+    assert!((g.y() - 2.0).abs() < 0.001);
 }

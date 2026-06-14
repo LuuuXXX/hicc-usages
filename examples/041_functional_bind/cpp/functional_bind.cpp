@@ -1,33 +1,42 @@
 #include "functional_bind.h"
 #include <functional>
 
-BindPoint* bind_point_new(int x, int y) { return new BindPoint{x, y}; }
-void bind_point_free(BindPoint* p) { delete p; }
+namespace functional_bind_ns {
 
-namespace {
 int add(int a, int b) { return a + b; }
-int sub(int a, int b) { return a - b; }
-int mul(int a, int b) { return a * b; }
+int multiply(int a, int b) { return a * b; }
+int subtract(int a, int b) { return a - b; }
+
+std::function<int(int)> make_adder(int n) {
+    return std::bind(add, std::placeholders::_1, n);
 }
 
-int add_bound_10(int x) {
-    auto bound = std::bind(add, 10, std::placeholders::_1);
-    return bound(x);
+std::function<int(int)> make_multiplier(int n) {
+    return std::bind(multiply, std::placeholders::_1, n);
 }
 
-int mul_bound_3(int x) {
-    auto bound = std::bind(mul, std::placeholders::_1, 3);
-    return bound(x);
+std::function<int(int)> make_subtractor(int n) {
+    return std::bind(subtract, std::placeholders::_1, n);
 }
 
-int sub_bind_first(int a, int b) {
-    using namespace std::placeholders;
-    auto bound = std::bind(sub, a, _1);
-    return bound(b);
+int apply_bound(std::function<int(int)> fn, int x) {
+    return fn(x);
 }
 
-int point_x_plus_offset(const BindPoint* p, int offset) {
-    auto get_x = [](const BindPoint* pt) { return pt->x; };
-    auto bound = std::bind(add, std::bind(get_x, p), offset);
-    return bound();
+std::function<int(int)> compose(std::function<int(int)> outer, std::function<int(int)> inner) {
+    return [outer, inner](int x) { return outer(inner(x)); };
 }
+
+int BoundAccumulator::call_and_accumulate(int x) {
+    int r = fn_(base_ + x);
+    base_ += r;
+    return r;
+}
+
+std::unique_ptr<BoundAccumulator> make_accumulator(std::function<int(int)> fn) {
+    return std::unique_ptr<BoundAccumulator>(new BoundAccumulator(std::move(fn)));
+}
+
+int functional_bind_anchor() { return 41; }
+
+} // namespace functional_bind_ns

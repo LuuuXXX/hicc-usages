@@ -1,15 +1,15 @@
 #include "typeid_rtti.h"
-#include <iostream>
 
 int main() {
-    Circle* c = circle_new(2);
-    Triangle* t = triangle_new(4, 6);
-    Shape* s1 = c;
-    Shape* s2 = t;
-    std::cout << "circle    type = " << type_name_of(s1) << std::endl;
-    std::cout << "triangle  type = " << type_name_of(s2) << std::endl;
-    std::cout << "static circle type = " << static_type_name_circle() << std::endl;
-    shape_free_circle(c);
-    shape_free_triangle(t);
+    using namespace typeid_rtti_ns;
+    DerivedA a;
+    DerivedB b;
+    Base& ra = a;
+    Base& rb = b;
+    std::cout << "ra.name=" << ra.name() << std::endl;
+    std::cout << "ra.typeid.name=" << type_name_base(ra) << std::endl;
+    std::cout << "same_type(a,a)=" << same_type(ra, ra) << std::endl;
+    std::cout << "same_type(a,b)=" << same_type(ra, rb) << std::endl;
+    std::cout << "is_derived_a(a)=" << is_derived_a(ra) << std::endl;
     return 0;
 }

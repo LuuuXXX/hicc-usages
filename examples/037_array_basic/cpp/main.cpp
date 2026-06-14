@@ -1,10 +1,17 @@
 #include "array_basic.h"
-#include <iostream>
 
 int main() {
-    IntArray4* a = int_array4_new();
-    for (std::size_t i = 0; i < a->size(); ++i) a->set(i, static_cast<int>(i + 1));
-    std::cout << "size=" << a->size() << " sum=" << a->sum() << std::endl;
-    int_array4_free(a);
+    using namespace array_basic_ns;
+    std::array<int, 5> a{};
+    fill_array(a, 10);  // [10, 11, 12, 13, 14]
+    std::cout << "sum=" << array_sum(a) << std::endl;
+    std::cout << "max=" << array_max(a) << std::endl;
+    std::cout << "avg=" << array_avg(a) << std::endl;
+    std::cout << "[";
+    for (size_t i = 0; i < a.size(); ++i) {
+        if (i) std::cout << ",";
+        std::cout << a[i];
+    }
+    std::cout << "]" << std::endl;
     return 0;
 }

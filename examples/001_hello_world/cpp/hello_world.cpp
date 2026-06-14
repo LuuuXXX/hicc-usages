@@ -1,9 +1,9 @@
 #include "hello_world.h"
 
-std::string hello(const std::string& who) {
-    return "hello world from " + who + "!";
+namespace hello_world_ns {
+
+int library_anchor() {
+    return 0xdeadbeef;
 }
 
-int add(int a, int b) {
-    return a + b;
-}
+} // namespace hello_world_ns

@@ -1,5 +1,5 @@
 #include "template_class.h"
 
-// Explicit instantiation — produces the symbols Rust will reach through.
-template class BoxT<int>;
-template class BoxT<double>;
+namespace template_class_ns {
+int template_class_anchor() { return 25; }
+}

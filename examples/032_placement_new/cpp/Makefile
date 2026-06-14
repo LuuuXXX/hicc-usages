@@ -1,28 +1,14 @@
-# Makefile template — mirrors standalone.sh
-# Replace placement_new and placement_new.cpp placeholders when scaffolding.
-NAME := placement_new
 CXX ?= g++
-CXX_FLAGS ?= -O2 -std=c++17 -Wall -Wextra -fPIC
-SOURCES := placement_new.cpp
-OBJECTS := $(addprefix build/,$(SOURCES:.cpp=.o))
+CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra -I.
+OUT ?= /tmp/placement_new_make
 
-HERE := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+$(OUT): placement_new.cpp main.cpp placement_new.h
+	$(CXX) $(CXXFLAGS) placement_new.cpp main.cpp -o $(OUT)
 
-.PHONY: all clean demo
-
-all: build/lib$(NAME).a
-
-build:
-	mkdir -p build
-
-build/%.o: %.cpp | build
-	$(CXX) $(CXX_FLAGS) -I$(HERE) -c $< -o $@
-
-build/lib$(NAME).a: $(OBJECTS)
-	ar rcs $@ $^
-
-demo: build/lib$(NAME).a
-	$(CXX) $(CXX_FLAGS) -I$(HERE) main.cpp -Lbuild -l$(NAME) -o build/$(NAME)_demo
+run: $(OUT)
+	$(OUT)
 
 clean:
-	rm -rf build
+	rm -f $(OUT)
+
+.PHONY: run clean

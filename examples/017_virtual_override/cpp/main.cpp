@@ -1,12 +1,13 @@
 #include "virtual_override.h"
-#include <iostream>
 
 int main() {
-    InfoLogger*  i = info_logger_new();
-    ErrorLogger* e = error_logger_new();
-    std::cout << i->format("hello") << std::endl;
-    std::cout << e->format("oops")  << std::endl;
-    logger_free_info(i);
-    logger_free_error(e);
+    using namespace virtual_override_ns;
+    Triangle t("tri1");
+    Pentagon p("pent1");
+    std::cout << t.name() << " sides=" << t.sides() << " desc=" << t.describe() << std::endl;
+    std::cout << p.name() << " sides=" << p.sides() << " desc=" << p.describe() << std::endl;
+
+    Shape* s = &p;
+    std::cout << "via base: " << s->describe() << std::endl;
     return 0;
 }

@@ -1,19 +1,28 @@
-use std::ffi::CStr;
-use string_basic::{concat, length, string_new, upper};
+use string_basic::*;
+
+fn show(s: &hicc_std::string) -> String {
+    let cs = unsafe { std::ffi::CStr::from_ptr(s.c_str()) };
+    cs.to_str().unwrap().to_string()
+}
 
 #[test]
-fn string_roundtrip() {
-    let a = string_new(b"hello, \0".as_ptr() as *const i8);
-    let b = string_new(b"world\0".as_ptr() as *const i8);
+fn string_greet_concat_upper() {
+    let who = hicc_std::string::from(c"world");
+    let g = greet(&who);
+    assert_eq!(show(&g), "hello, world!");
 
-    let c = concat(&a, &b);
-    unsafe {
-        assert_eq!(CStr::from_ptr(c.c_str()).to_bytes(), b"hello, world");
-    }
-    assert_eq!(length(&a), 7);
+    let cat = concat(&hicc_std::string::from(c"foo"), &hicc_std::string::from(c"bar"));
+    assert_eq!(show(&cat), "foobar");
 
-    let u = upper(&string_new(b"abc\0".as_ptr() as *const i8));
-    unsafe {
-        assert_eq!(CStr::from_ptr(u.c_str()).to_bytes(), b"ABC");
-    }
+    let upper = to_upper(&g);
+    assert_eq!(show(&upper), "HELLO, WORLD!");
+}
+
+#[test]
+fn string_length_contains() {
+    let s = hicc_std::string::from(c"hello, world!");
+    assert_eq!(string_length(&s), 13);
+    assert!(contains_substring(&s, &hicc_std::string::from(c"world")));
+    assert!(!contains_substring(&s, &hicc_std::string::from(c"xyz")));
+    assert!(contains_substring(&s, &hicc_std::string::from(c"")));  // empty always matches
 }

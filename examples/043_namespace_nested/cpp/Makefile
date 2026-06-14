@@ -1,28 +1,14 @@
-# Makefile template — mirrors standalone.sh
-# Replace namespace_nested and namespace_nested.cpp placeholders when scaffolding.
-NAME := namespace_nested
 CXX ?= g++
-CXX_FLAGS ?= -O2 -std=c++17 -Wall -Wextra -fPIC
-SOURCES := namespace_nested.cpp
-OBJECTS := $(addprefix build/,$(SOURCES:.cpp=.o))
+CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra -I.
+OUT ?= /tmp/namespace_nested_make
 
-HERE := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+$(OUT): namespace_nested.cpp main.cpp namespace_nested.h
+	$(CXX) $(CXXFLAGS) namespace_nested.cpp main.cpp -o $(OUT)
 
-.PHONY: all clean demo
-
-all: build/lib$(NAME).a
-
-build:
-	mkdir -p build
-
-build/%.o: %.cpp | build
-	$(CXX) $(CXX_FLAGS) -I$(HERE) -c $< -o $@
-
-build/lib$(NAME).a: $(OBJECTS)
-	ar rcs $@ $^
-
-demo: build/lib$(NAME).a
-	$(CXX) $(CXX_FLAGS) -I$(HERE) main.cpp -Lbuild -l$(NAME) -o build/$(NAME)_demo
+run: $(OUT)
+	$(OUT)
 
 clean:
-	rm -rf build
+	rm -f $(OUT)
+
+.PHONY: run clean

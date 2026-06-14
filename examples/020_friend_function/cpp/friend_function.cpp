@@ -1,8 +1,5 @@
 #include "friend_function.h"
 
-Account merge(const Account& a, const Account& b) {
-    return Account(a.balance_ + b.balance_);
+namespace friend_function_ns {
+int friend_function_anchor() { return 20; }
 }
-
-Account* account_new(int balance) { return new Account(balance); }
-void     account_free(Account* a) { delete a; }

@@ -1,19 +1,29 @@
 #pragma once
-
 #include <memory>
+#include <string>
+#include <iostream>
 
-// unique_ptr<T> return: hicc strips the unique_ptr wrapper — Rust receives
-// an owned T (the deleter is wired via destroy= in import_class!).
+namespace unique_ptr_ns {
 
-class Widget {
+class Resource {
 public:
-    explicit Widget(int v) : value_(v) {}
-    int value() const { return value_; }
+    Resource(int id, const std::string& name) : id_(id), name_(name) {
+        std::cout << "Resource(" << id_ << "," << name_ << ") ctor" << std::endl;
+    }
+    ~Resource() {
+        std::cout << "~Resource(" << id_ << "," << name_ << ") dtor" << std::endl;
+    }
+    int id() const { return id_; }
+    const std::string& name() const { return name_; }
 private:
-    int value_;
+    int id_;
+    std::string name_;
 };
 
-// Factory returns unique_ptr<Widget> by value; hicc unwraps it.
-std::unique_ptr<Widget> make_widget(int v);
-// Deleter used by hicc's destroy= attribute.
-void widget_free(Widget* w);
+// 返回 unique_ptr（默认 deleter）
+std::unique_ptr<Resource> make_resource(int id, const std::string& name);
+
+// 接管 unique_ptr（消费）
+int consume_resource(std::unique_ptr<Resource> r);
+
+} // namespace unique_ptr_ns

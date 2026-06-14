@@ -1,10 +1,12 @@
 #include "class_volatile.h"
-#include <iostream>
 
 int main() {
-    volatile VCounter* c = vcounter_new();
-    c->inc(); c->inc();
-    std::cout << "volatile counter = " << c->get() << std::endl;
-    vcounter_free(const_cast<VCounter*>(c));
+    using namespace class_volatile_ns;
+    Sensor s(7);
+    s.write(100);
+    s.write(200);
+    std::cout << "id=" << s.id() << " reading=" << s.read() << " counter=" << s.counter() << std::endl;
+    s.safe_write(300);
+    std::cout << "safe_read=" << s.safe_read() << " counter=" << s.counter() << std::endl;
     return 0;
 }

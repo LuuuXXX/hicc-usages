@@ -1,38 +1,57 @@
-// Virtual method bound as a regular method — the vtable dispatch is on the
-// C++ side; Rust just calls the binding. std::string return requires the
-// same import_class! treatment as in 001.
+//! 015_virtual_basic: virtual override + 基类有默认实现
+//!
+//! hicc 模式：派生类 Rectangle/Ellipse 独立 import_class!。
+//! C++ 中 `shape.area()` 走派生类 vtable（C++ 自动），hicc 只需声明方法签名。
 
 hicc::cpp! {
     #include "virtual_basic.h"
-
-    inline std::string* hicc_string_new(const char* s) { return new std::string(s); }
-    inline void         hicc_string_free(std::string* s) { delete s; }
+    #include <hicc/std/string.hpp>
 }
 
 hicc::import_class! {
-    #[cpp(class = "std::string", destroy = "hicc_string_free")]
-    pub class string {
-        #[cpp(method = "const char* c_str() const")]
-        pub fn c_str(&self) -> *const i8;
+    class string = hicc_std::string;
+
+    #[cpp(class = "virtual_basic_ns::Rectangle")]
+    pub class Rectangle {
+        #[cpp(method = "const std::string& name() const")]
+        pub fn name(&self) -> &string;
+
+        #[cpp(method = "float area() const")]
+        pub fn area(&self) -> f32;
+
+        #[cpp(method = "float perimeter() const")]
+        pub fn perimeter(&self) -> f32;
+
+        #[cpp(method = "std::string describe() const")]
+        pub fn describe(&self) -> string;
+
+        pub fn new(w: f32, h: f32) -> Self { rectangle_new(w, h) }
     }
-}
 
-hicc::import_class! {
-    #[cpp(class = "Dog", destroy = "dog_free")]
-    pub class Dog {
-        // virtual — transparently bound:
-        #[cpp(method = "std::string sound() const")]
-        pub fn sound(&self) -> string;
+    #[cpp(class = "virtual_basic_ns::Ellipse")]
+    pub class Ellipse {
+        #[cpp(method = "const std::string& name() const")]
+        pub fn name(&self) -> &string;
 
-        // inherited from Animal:
-        #[cpp(method = "std::string name() const")]
-        pub fn name(&self) -> string;
+        #[cpp(method = "float area() const")]
+        pub fn area(&self) -> f32;
+
+        #[cpp(method = "float perimeter() const")]
+        pub fn perimeter(&self) -> f32;
+
+        #[cpp(method = "std::string describe() const")]
+        pub fn describe(&self) -> string;
+
+        pub fn new(a: f32, b: f32) -> Self { ellipse_new(a, b) }
     }
 }
 
 hicc::import_lib! {
-    #![link_name = "virtual_basic_hicc"]
+    #![link_name = "virtual_basic"]
 
-    #[cpp(func = "Dog* dog_new(const char*)")]
-    pub fn dog_new(name: *const i8) -> Dog;
+    #[cpp(func = "std::unique_ptr<virtual_basic_ns::Rectangle> hicc::make_unique<virtual_basic_ns::Rectangle, float, float>(float&&, float&&)")]
+    pub fn rectangle_new(w: f32, h: f32) -> Rectangle;
+
+    #[cpp(func = "std::unique_ptr<virtual_basic_ns::Ellipse> hicc::make_unique<virtual_basic_ns::Ellipse, float, float>(float&&, float&&)")]
+    pub fn ellipse_new(a: f32, b: f32) -> Ellipse;
 }

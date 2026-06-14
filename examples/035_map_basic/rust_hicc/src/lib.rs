@@ -1,44 +1,33 @@
-// StringIntMap wraps std::map<std::string, int>. Expose accessor methods
-// that take/return std::string (which we bind separately as a class).
+//! 035_map_basic: std::map
+//!
+//! hicc 模式：`hicc_std::map<K, V>` 别名 + `make_unique` 工厂。
+//! K 为 Pod<i32>，V 为 hicc_std::string。
+//! Rust 端使用 hicc_std::map 的内置方法（insert / get / size 等）。
 
 hicc::cpp! {
     #include "map_basic.h"
-
-    inline std::string* hicc_string_new(const char* s) { return new std::string(s); }
-    inline void         hicc_string_free(std::string* s) { delete s; }
-}
-
-hicc::import_class! {
-    #[cpp(class = "std::string", destroy = "hicc_string_free")]
-    pub class string {
-        #[cpp(method = "const char* c_str() const")]
-        pub fn c_str(&self) -> *const i8;
-    }
-}
-
-hicc::import_class! {
-    #[cpp(class = "StringIntMap", destroy = "str_int_map_free")]
-    pub class StringIntMap {
-        #[cpp(method = "void insert(const std::string&, int)")]
-        pub fn insert(&mut self, k: &string, v: i32);
-
-        #[cpp(method = "std::size_t size() const")]
-        pub fn size(&self) -> usize;
-
-        #[cpp(method = "bool contains(const std::string&) const")]
-        pub fn contains(&self, k: &string) -> bool;
-
-        #[cpp(method = "int get_or(const std::string&, int) const")]
-        pub fn get_or(&self, k: &string, def: i32) -> i32;
-    }
+    #include <hicc/std/map.hpp>
+    #include <hicc/std/string.hpp>
+    typedef std::map<int, std::string> CppMap;
 }
 
 hicc::import_lib! {
-    #![link_name = "map_basic_hicc"]
+    #![link_name = "map_basic"]
 
-    #[cpp(func = "StringIntMap* str_int_map_new()")]
-    pub fn str_int_map_new() -> StringIntMap;
+    class RustMap = hicc_std::map<hicc::Pod<i32>, hicc_std::string>;
 
-    #[cpp(func = "std::string* hicc_string_new(const char*)")]
-    pub fn string_new(c_str: *const i8) -> string;
+    #[cpp(func = "std::unique_ptr<CppMap> hicc::make_unique<CppMap>()")]
+    pub fn map_new() -> RustMap;
+
+    #[cpp(func = "void map_basic_ns::put(std::map<int, std::string>&, int, const std::string&)")]
+    pub fn put(m: &mut RustMap, key: i32, val: &hicc_std::string);
+
+    #[cpp(func = "std::string map_basic_ns::get_or(const std::map<int, std::string>&, int, const std::string&)")]
+    pub fn get_or(m: &RustMap, key: i32, def: &hicc_std::string) -> hicc_std::string;
+
+    #[cpp(func = "size_t map_basic_ns::map_size(const std::map<int, std::string>&)")]
+    pub fn map_size(m: &RustMap) -> usize;
+
+    #[cpp(func = "long map_basic_ns::sum_key_values(const std::map<int, std::string>&)")]
+    pub fn sum_key_values(m: &RustMap) -> i64;
 }

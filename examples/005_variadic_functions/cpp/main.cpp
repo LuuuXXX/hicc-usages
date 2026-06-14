@@ -1,10 +1,10 @@
 #include "variadic_functions.h"
-#include <iostream>
 
 int main() {
-    std::cout << "sum(2, 10, 20)   = " << sum(2, 10, 20) << std::endl;
-    std::cout << "sum(3, 1, 2, 3)  = " << sum(3, 1, 2, 3) << std::endl;
-    std::cout << "sum2(10, 20)     = " << sum2(10, 20) << std::endl;
-    std::cout << "sum3(1, 2, 3)    = " << sum3(1, 2, 3) << std::endl;
+    std::cout << "sum_ints(3, 10, 20, 30) = "
+              << variadic_ns::sum_ints(3, 10, 20, 30) << std::endl;
+    variadic_ns::log_line("log: %s answer=%d", "demo", 42);
+    std::cout << "sum_va_wrapper(4, 1, 2, 3, 4) = "
+              << variadic_ns::sum_va_wrapper(4, 1, 2, 3, 4) << std::endl;
     return 0;
 }

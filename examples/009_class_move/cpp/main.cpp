@@ -1,17 +1,17 @@
 #include "class_move.h"
-#include <iostream>
 #include <utility>
 
 int main() {
-    Resource* r = resource_new(99);
-    std::cout << "peek=" << r->peek() << " valid=" << r->is_valid() << std::endl;
+    using namespace class_move_ns;
+    Holder a(3, "A");
+    a += 10;
+    std::cout << "a size=" << a.size() << " first=" << a.first() << " tag=" << a.tag() << std::endl;
 
-    // Move ctor: takes ownership of *r's internals.
-    Resource moved = std::move(*r);
-    int v = std::move(moved).consume_value();
-    std::cout << "consumed=" << v << std::endl;
-    std::cout << "moved-from r valid=" << r->is_valid() << std::endl;
+    Holder b = std::move(a);   // move ctor
+    std::cout << "b size=" << b.size() << " a size=" << a.size() << std::endl;
 
-    resource_free(r);
+    Holder c;
+    c = std::move(b);          // move assign
+    std::cout << "c size=" << c.size() << " b size=" << b.size() << std::endl;
     return 0;
 }

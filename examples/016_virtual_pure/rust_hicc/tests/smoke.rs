@@ -1,16 +1,28 @@
-use std::ffi::CStr;
-use virtual_pure::{mem_storage_new, string_new};
+use virtual_pure::*;
+
+fn show(s: &hicc_std::string) -> String {
+    let cs = unsafe { std::ffi::CStr::from_ptr(s.c_str()) };
+    cs.to_str().unwrap().to_string()
+}
 
 #[test]
-fn put_and_get() {
-    let mut s = mem_storage_new();
-    let k = string_new(b"foo\0".as_ptr() as *const i8);
-    let v = string_new(b"bar\0".as_ptr() as *const i8);
-    s.put(&k, &v);
+fn storage_put_get_remove() {
+    let mut s = InMemoryStorage::new();
+    let k = hicc_std::string::from(c"key1");
+    let v = hicc_std::string::from(c"val1");
+    assert!(s.put(&k, &v));
     assert_eq!(s.size(), 1);
+    assert_eq!(show(&s.get(&k)), "val1");
 
-    let got = s.get(&k);
-    unsafe {
-        assert_eq!(CStr::from_ptr(got.c_str()).to_bytes(), b"bar");
-    }
+    assert!(s.remove(&k));
+    assert_eq!(s.size(), 0);
+    assert_eq!(show(&s.get(&k)), "");
+}
+
+#[test]
+fn storage_missing_key() {
+    let s = InMemoryStorage::new();
+    let k = hicc_std::string::from(c"missing");
+    assert_eq!(show(&s.get(&k)), "");
+    assert_eq!(s.size(), 0);
 }

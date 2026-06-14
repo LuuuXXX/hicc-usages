@@ -1,30 +1,32 @@
 #pragma once
-
 #include <string>
+#include <iostream>
 
-// Override: derived class provides its own impl of a base virtual method.
-// Rust side just sees the derived class — override is transparent to FFI.
+namespace virtual_override_ns {
 
-class Logger {
+class Shape {
 public:
-    virtual ~Logger() = default;
-    virtual std::string level() const = 0;
-    std::string format(const std::string& msg) const {
-        return "[" + level() + "] " + msg;
-    }
+    Shape(const std::string& n) : name_(n) {}
+    virtual ~Shape() = default;
+
+    const std::string& name() const { return name_; }
+    virtual int sides() const { return 0; }
+    virtual std::string describe() const { return name_ + "/sides=" + std::to_string(sides()); }
+protected:
+    std::string name_;
 };
 
-class InfoLogger : public Logger {
+class Triangle : public Shape {
 public:
-    std::string level() const override { return "INFO"; }
+    Triangle(const std::string& n) : Shape(n) {}
+    int sides() const override { return 3; }
 };
 
-class ErrorLogger : public Logger {
+class Pentagon : public Shape {
 public:
-    std::string level() const override { return "ERROR"; }
+    Pentagon(const std::string& n) : Shape(n) {}
+    int sides() const override { return 5; }
+    std::string describe() const override { return name_ + "(pentagon)"; }
 };
 
-InfoLogger*  info_logger_new();
-ErrorLogger* error_logger_new();
-void         logger_free_info(InfoLogger* l);
-void         logger_free_error(ErrorLogger* l);
+} // namespace virtual_override_ns

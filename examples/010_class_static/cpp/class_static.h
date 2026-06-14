@@ -1,18 +1,39 @@
 #pragma once
+#include <string>
+#include <iostream>
 
-// Static members + methods. Static methods are bound in `import_lib!` with the
-// fully-qualified C++ name (Class::method), so they look like free functions
-// to Rust.
+namespace class_static_ns {
 
-class Registry {
+class Counter {
 public:
-    Registry()  { ++live_count_; }
-    ~Registry() { --live_count_; }
+    Counter() : id_(++s_next_id_), count_(0) {
+        ++s_alive_;
+        std::cout << "Counter() id=" << id_ << std::endl;
+    }
+    ~Counter() {
+        --s_alive_;
+        std::cout << "~Counter() id=" << id_ << std::endl;
+    }
 
-    static int live_count() { return live_count_; }
-    static int next_id()    { return next_id_++; }
+    void inc() { ++count_; }
+    int count() const { return count_; }
+    int id() const { return id_; }
+
+    // 静态成员函数
+    static int alive() { return s_alive_; }
+    static int next_id() { return s_next_id_; }
+    static const std::string& species() { return s_species_; }
+
+    // 静态成员变量
+    static int s_total_created;
 
 private:
-    static int live_count_;
-    static int next_id_;
+    int id_;
+    int count_;
+
+    static int s_alive_;
+    static int s_next_id_;
+    static const std::string s_species_;
 };
+
+} // namespace class_static_ns

@@ -1,12 +1,13 @@
 #include "class_copy.h"
-#include <iostream>
 
 int main() {
-    Box* a = box_new(42);
-    Box* b = box_clone(a);
-    a->set(100);
-    std::cout << "a=" << a->get() << " b=" << b->get() << std::endl;  // a=100 b=42
-    box_free(a);
-    box_free(b);
+    class_copy_ns::Buffer a(10, "A");
+    class_copy_ns::Buffer b = a;            // copy ctor
+    class_copy_ns::Buffer c = std::move(a); // move ctor
+    class_copy_ns::Buffer d;
+    d = b;                                  // copy assign
+    std::cout << "b size=" << b.size() << " tag=" << b.tag() << std::endl;
+    std::cout << "c size=" << c.size() << " tag=" << c.tag() << std::endl;
+    std::cout << "d size=" << d.size() << " tag=" << d.tag() << std::endl;
     return 0;
 }

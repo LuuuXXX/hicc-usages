@@ -1,17 +1,11 @@
-use std::ffi::CStr;
-
-use hello_world::{add, hello, string_new};
+use hello_world::{answer, hello_world};
 
 #[test]
-fn add_works() {
-    assert_eq!(add(2, 3), 5);
-    assert_eq!(add(-1, 1), 0);
+fn answer_is_42() {
+    assert_eq!(answer(), 42);
 }
 
 #[test]
-fn hello_roundtrip() {
-    let who = unsafe { string_new(b"hicc\0".as_ptr() as *const i8) };
-    let result = hello(&who);
-    let cstr = unsafe { CStr::from_ptr(result.c_str()) };
-    assert_eq!(cstr.to_bytes(), b"hello world from hicc!");
+fn hello_world_runs() {
+    hello_world(); // 不 panic 即通过
 }

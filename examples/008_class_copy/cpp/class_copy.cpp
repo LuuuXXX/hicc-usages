@@ -1,5 +1,5 @@
 #include "class_copy.h"
 
-Box* box_new(int v)           { return new Box(v); }
-Box* box_clone(const Box* s)  { return new Box(*s); }   // copy ctor
-void box_free(Box* b)         { delete b; }
+namespace class_copy_ns {
+int class_copy_anchor() { return 8; }
+}

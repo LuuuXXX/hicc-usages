@@ -1,16 +1,30 @@
 #pragma once
-
 #include <stdexcept>
+#include <string>
+#include <memory>
+#include <iostream>
 
-// hicc translates C++ throw/catch into Exception<T> on the Rust side
-// (no exception types cross the FFI; only success value + what() string).
+namespace exception_basic_ns {
 
-// Safe: returns a plain int.
-int safe_divide(int a, int b);
+// Free functions that may throw
+int safe_divide(int a, int b);                  // throws std::invalid_argument if b == 0
+int parse_int(const std::string& s);            // throws std::invalid_argument on bad input
+std::string nth_char(const std::string& s, int idx); // throws std::out_of_range
 
-// Throws std::runtime_error when b == 0.
-// FFI returns hicc::Exception<int>; the caller checks via .ok().
-int throwing_divide(int a, int b);
+// Class whose methods throw on error paths
+class BankAccount {
+public:
+    explicit BankAccount(int initial_balance);
+    int balance() const;
+    void deposit(int amount);                   // throws std::invalid_argument if amount < 0
+    int withdraw(int amount);                   // throws std::runtime_error if insufficient funds
+private:
+    int balance_;
+};
 
-// Throws std::out_of_range; shows different exception type mapping to same channel.
-int checked_index(const int* arr, int n, int i);
+std::unique_ptr<BankAccount> make_account(int initial_balance);
+
+// Returns 1 if input even, else throws std::logic_error
+int require_even(int x);
+
+} // namespace exception_basic_ns

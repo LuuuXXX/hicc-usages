@@ -1,9 +1,14 @@
 #pragma once
+#include <iostream>
 
-#include <string>
+namespace hello_world_ns {
 
-// Returns "hello world from <who>!".
-std::string hello(const std::string& who);
+inline void hello_world() {
+    std::cout << "Hello, World! [from C++ hello_world]" << std::endl;
+}
 
-// Adds two 32-bit signed integers.
-int add(int a, int b);
+inline int answer() {
+    return 42;
+}
+
+} // namespace hello_world_ns

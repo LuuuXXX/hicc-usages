@@ -1,13 +1,20 @@
 #include "class_static.h"
-#include <iostream>
 
 int main() {
-    std::cout << "live_count=" << Registry::live_count() << std::endl;
+    using namespace class_static_ns;
+    std::cout << "before: alive=" << Counter::alive()
+              << " next_id=" << Counter::next_id()
+              << " species=" << Counter::species() << std::endl;
+
     {
-        Registry a, b, c;
-        std::cout << "live_count=" << Registry::live_count()
-                  << " next_id=" << Registry::next_id() << std::endl;
+        Counter a;
+        a.inc(); a.inc();
+        Counter b;
+        b.inc();
+        std::cout << "a id=" << a.id() << " count=" << a.count() << std::endl;
+        std::cout << "b id=" << b.id() << " count=" << b.count() << std::endl;
+        std::cout << "alive=" << Counter::alive() << std::endl;
     }
-    std::cout << "live_count=" << Registry::live_count() << std::endl;
+    std::cout << "after: alive=" << Counter::alive() << std::endl;
     return 0;
 }

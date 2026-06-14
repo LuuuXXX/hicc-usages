@@ -1,23 +1,31 @@
 #pragma once
+#include <string>
+#include <iostream>
 
-// mutable member: a const method can still modify it. Transparent to FFI.
+namespace mutable_member_ns {
 
-class Cache {
+// mutable 字段允许在 const 方法中修改（典型用途：缓存、计数器）
+class Query {
 public:
-    Cache() : cached_(0), valid_(false) {}
-    int compute(int x) const {
-        if (valid_ && x == cached_x_) return cached_;
-        cached_x_ = x;
-        cached_   = x * x;  // pretend expensive
-        valid_   = true;
-        return cached_;
+    Query(const std::string& key) : key_(key), call_count_(0), last_result_("") {}
+
+    const std::string& key() const { return key_; }
+
+    // const 方法，但内部修改 mutable 字段
+    std::string execute() const {
+        ++call_count_;
+        if (last_result_.empty()) {
+            last_result_ = "[result for " + key_ + "]";
+        }
+        return last_result_;
     }
-    int last_cached() const { return cached_; }
+
+    int call_count() const { return call_count_; }
+
 private:
-    mutable int cached_;
-    mutable int cached_x_;
-    mutable bool valid_;
+    std::string key_;
+    mutable int call_count_;
+    mutable std::string last_result_;
 };
 
-Cache* cache_new();
-void   cache_free(Cache* c);
+} // namespace mutable_member_ns

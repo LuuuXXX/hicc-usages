@@ -1,18 +1,53 @@
 #pragma once
+#include <string>
+#include <memory>
+#include <iostream>
 
-// Nested namespaces: hicc's #[cpp(func = "...")] just sees fully-qualified
-// signatures, so namespaces are transparent. We expose top-level free wrappers.
+namespace n1 {
+namespace n2 {
+namespace n3 {
 
-namespace outer::inner::core {
-    int add(int a, int b);
-    int mul(int a, int b);
-}
+class Foo {
+public:
+    Foo();
+    explicit Foo(int v);
+    int value() const;
+    void set_value(int v);
+    std::string describe() const;
+private:
+    int value_;
+};
 
-namespace outer::inner::util {
-    int combined(int a, int b, int c);
-}
+std::unique_ptr<Foo> make_foo(int v);
+int compute(int x);
 
-// Top-level wrappers — keeps FFI surface simple.
-int ns_add(int a, int b);
-int ns_mul(int a, int b);
-int ns_combined(int a, int b, int c);
+} // namespace n3
+} // namespace n2
+
+namespace inner {
+class Bar {
+public:
+    Bar();
+    explicit Bar(const std::string& name);
+    std::string name() const;
+    void rename(const std::string& new_name);
+private:
+    std::string name_;
+};
+
+std::unique_ptr<Bar> make_bar(const std::string& name);
+} // namespace inner
+
+} // namespace n1
+
+// Top-level namespace alias for testing
+namespace outer {
+namespace deep {
+namespace deeper {
+
+int add(int a, int b);
+int triple(int x);
+
+} // namespace deeper
+} // namespace deep
+} // namespace outer

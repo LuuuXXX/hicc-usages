@@ -1,33 +1,35 @@
-// ⚠️ KEY HICC PATTERN: std::string MUST be bound via import_class! — do NOT
-// use hicc_std::string alias (memory layout incompatible → segfault).
+//! 036_string_basic: std::string
+//!
+//! hicc 模式：直接绑业务函数（参数 / 返回值类型为 std::string）。
+//! Rust 端用 `hicc_std::string` 接收。hicc-std 已内置 std::string 的实例化构造
+//! （`hicc_std::string::from(c"...")`），不需要手动 typedef。
+//!
+//! 借助 `class string = hicc_std::string;` 在 import_lib! 中开放别名，
+//! 让 `&hicc_std::string` / `*const i8` 互转更顺畅（hicc-std::string 已实现
+//! ClassRef 转换）。
 
 hicc::cpp! {
     #include "string_basic.h"
-
-    inline std::string* hicc_string_new(const char* s) { return new std::string(s); }
-    inline void         hicc_string_free(std::string* s) { delete s; }
-}
-
-hicc::import_class! {
-    #[cpp(class = "std::string", destroy = "hicc_string_free")]
-    pub class string {
-        #[cpp(method = "const char* c_str() const")]
-        pub fn c_str(&self) -> *const i8;
-    }
+    #include <hicc/std/string.hpp>
 }
 
 hicc::import_lib! {
-    #![link_name = "string_basic_hicc"]
+    #![link_name = "string_basic"]
 
-    #[cpp(func = "std::string concat(const std::string&, const std::string&)")]
-    pub fn concat(a: &string, b: &string) -> string;
+    class string = hicc_std::string;
 
-    #[cpp(func = "std::string upper(const std::string&)")]
-    pub fn upper(s: &string) -> string;
+    #[cpp(func = "std::string string_basic_ns::greet(const std::string&)")]
+    pub fn greet(name: &hicc_std::string) -> hicc_std::string;
 
-    #[cpp(func = "std::size_t length(const std::string&)")]
-    pub fn length(s: &string) -> usize;
+    #[cpp(func = "std::string string_basic_ns::to_upper(const std::string&)")]
+    pub fn to_upper(s: &hicc_std::string) -> hicc_std::string;
 
-    #[cpp(func = "std::string* hicc_string_new(const char*)")]
-    pub fn string_new(c_str: *const i8) -> string;
+    #[cpp(func = "std::string string_basic_ns::concat(const std::string&, const std::string&)")]
+    pub fn concat(a: &hicc_std::string, b: &hicc_std::string) -> hicc_std::string;
+
+    #[cpp(func = "size_t string_basic_ns::string_length(const std::string&)")]
+    pub fn string_length(s: &hicc_std::string) -> usize;
+
+    #[cpp(func = "bool string_basic_ns::contains_substring(const std::string&, const std::string&)")]
+    pub fn contains_substring(hay: &hicc_std::string, needle: &hicc_std::string) -> bool;
 }

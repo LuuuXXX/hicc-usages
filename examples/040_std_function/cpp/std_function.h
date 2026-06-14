@@ -1,16 +1,27 @@
 #pragma once
-
 #include <functional>
+#include <string>
+#include <memory>
+#include <iostream>
 
-// ⚠️ std::function<int(int,int)> is not nameable across FFI.
-// We expose named free functions that internally use std::function.
+namespace std_function_ns {
 
-// Run an arbitrary binary int operation passed as a callable.
-int run_binary_op(int a, int b, int op_kind);
+// A callable wrapper: stores a std::function, calls it via operator()().
+class Callback {
+public:
+    explicit Callback(std::function<int(int)> fn) : fn_(std::move(fn)) {}
+    int invoke(int x) const { return fn_(x); }
+    void replace(std::function<int(int)> fn) { fn_ = std::move(fn); }
+    long call_n_times(int x, int n) const;  // calls fn_(x) n times, returns sum
+private:
+    std::function<int(int)> fn_;
+};
 
-// Pre-registered operations (defined in .cpp via std::function).
-int add_op(int a, int b);
-int mul_op(int a, int b);
+// Free functions demonstrating std::function parameters / returns
+int apply_dbl(std::function<int(int)> fn, int x);
+std::function<int(int)> make_doubler();
+int chain(std::function<int(int)> f, std::function<int(int)> g, int x);
 
-// Compose two ops via std::function chaining.
-int compose_then_add_then_mul(int x, int add_n, int mul_n);
+std::unique_ptr<Callback> make_callback(std::function<int(int)> fn);
+
+} // namespace std_function_ns

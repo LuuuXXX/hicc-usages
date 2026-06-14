@@ -2,13 +2,25 @@
 #include <iostream>
 
 int main() {
-    std::cout << "add_bound_10(5) = " << add_bound_10(5) << std::endl;
-    std::cout << "mul_bound_3(7) = " << mul_bound_3(7) << std::endl;
-    std::cout << "sub_bind_first(10,3) = " << sub_bind_first(10, 3) << std::endl;
+    using namespace functional_bind_ns;
 
-    BindPoint* p = bind_point_new(42, 100);
-    std::cout << "point_x_plus_offset(p, 8) = "
-              << point_x_plus_offset(p, 8) << std::endl;
-    bind_point_free(p);
+    auto adder = make_adder(10);    // _1 + 10
+    std::cout << "adder(5) = " << adder(5) << std::endl;
+
+    auto mult = make_multiplier(3); // _1 * 3
+    std::cout << "mult(4) = " << mult(4) << std::endl;
+
+    auto sub = make_subtractor(100); // _1 - 100
+    std::cout << "sub(150) = " << sub(150) << std::endl;
+
+    std::cout << "apply_bound(mult, 6) = " << apply_bound(mult, 6) << std::endl;
+
+    auto composed = compose(mult, adder);  // (_1 + 10) * 3
+    std::cout << "composed(2) = " << composed(2) << std::endl;
+
+    auto acc = make_accumulator(adder);
+    std::cout << "acc.call_and_accumulate(5) = " << acc->call_and_accumulate(5) << std::endl;
+    std::cout << "acc.base() = " << acc->base() << std::endl;
+
     return 0;
 }

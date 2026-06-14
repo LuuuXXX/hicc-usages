@@ -1,35 +1,85 @@
 #include "summary.h"
 
-Calculator::Calculator(int seed) : seed_(seed) {}
-Calculator::~Calculator() {}
+namespace summary_ns {
 
-int Calculator::base() const { return seed_; }
+Customer::Customer(int id, const std::string& name, CustomerTier tier)
+    : id_(id), name_(name), tier_(tier), total_spent_(0) {}
 
-int Calculator::apply(OpKind op, int x, int y) const {
-    switch (op) {
-        case OpKind::Add: return seed_ + x + y;
-        case OpKind::Sub: return seed_ + x - y;
-        case OpKind::Mul: return seed_ + x * y;
-        case OpKind::Div:
-            if (y == 0) throw std::runtime_error("calc divide by zero");
-            return seed_ + x / y;
+int Customer::id() const { return id_; }
+std::string Customer::name() const { return name_; }
+CustomerTier Customer::tier() const { return tier_; }
+
+void Customer::rename(const std::string& new_name) { name_ = new_name; }
+
+void Customer::upgrade(CustomerTier new_tier) {
+    if (static_cast<int>(new_tier) < static_cast<int>(tier_)) {
+        throw std::invalid_argument("cannot downgrade");
     }
-    throw std::runtime_error("unknown op");
+    tier_ = new_tier;
 }
 
-std::string Calculator::describe() const {
-    return "Calculator(seed=" + std::to_string(seed_) + ")";
+void Customer::charge(int amount) {
+    if (amount <= 0) {
+        throw std::invalid_argument("charge amount must be positive");
+    }
+    purchases_.push_back(amount);
+    total_spent_ += amount;
 }
 
-Calculator* calc_new(int seed) { return new Calculator(seed); }
-void calc_free(Calculator* c) { delete c; }
-
-int op_kind_int(int kind) { return kind; }
-const char* calc_version() { return "summary-calc-v1"; }
-
-// Thread-local buffer keeps c_str() alive until next call.
-const char* calc_describe_c(const Calculator* c) {
-    thread_local std::string cache;
-    cache = c->describe();
-    return cache.c_str();
+int Customer::purchase_at(size_t idx) const {
+    if (idx >= purchases_.size()) {
+        throw std::out_of_range("purchase index out of range");
+    }
+    return purchases_[idx];
 }
+
+size_t Customer::purchase_count() const { return purchases_.size(); }
+int Customer::total_spent() const { return total_spent_; }
+void Customer::add_purchase(int amount) {
+    purchases_.push_back(amount);
+    total_spent_ += amount;
+}
+
+std::string Customer::describe() const {
+    std::string tier_name;
+    switch (tier_) {
+        case CustomerTier::Free:   tier_name = "free";   break;
+        case CustomerTier::Basic:  tier_name = "basic";  break;
+        case CustomerTier::Premium: tier_name = "premium"; break;
+    }
+    return "Customer(" + std::to_string(id_) + ", " + name_ + ", " + tier_name + ")";
+}
+
+std::unique_ptr<Customer> make_customer(int id, const std::string& name, int tier) {
+    return std::unique_ptr<Customer>(new Customer(id, name, tier_from_int(tier)));
+}
+
+// ----- CustomerBase -----
+std::string CustomerBase::label() const { return "base"; }
+
+// ----- VipCustomer -----
+VipCustomer::VipCustomer(double discount_rate) : discount_rate_(discount_rate) {}
+std::string VipCustomer::label() const { return "vip"; }
+double VipCustomer::discount() const { return discount_rate_; }
+
+std::unique_ptr<CustomerBase> make_base() {
+    return std::unique_ptr<VipCustomer>(new VipCustomer(0.05));
+}
+std::unique_ptr<VipCustomer> make_vip(double discount_rate) {
+    return std::unique_ptr<VipCustomer>(new VipCustomer(discount_rate));
+}
+
+double compute_discounted_price(const CustomerBase& c, double price) {
+    return price * (1.0 - c.discount());
+}
+
+std::vector<int> doubled_values(const std::vector<int>& v) {
+    std::vector<int> out;
+    out.reserve(v.size());
+    for (int x : v) out.push_back(x * 2);
+    return out;
+}
+
+int summary_anchor() { return 48; }
+
+} // namespace summary_ns

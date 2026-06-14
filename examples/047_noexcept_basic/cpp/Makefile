@@ -1,28 +1,14 @@
-# Makefile template — mirrors standalone.sh
-# Replace noexcept_basic and noexcept_basic.cpp placeholders when scaffolding.
-NAME := noexcept_basic
 CXX ?= g++
-CXX_FLAGS ?= -O2 -std=c++17 -Wall -Wextra -fPIC
-SOURCES := noexcept_basic.cpp
-OBJECTS := $(addprefix build/,$(SOURCES:.cpp=.o))
+CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra -I.
+OUT ?= /tmp/noexcept_basic_make
 
-HERE := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+$(OUT): noexcept_basic.cpp main.cpp noexcept_basic.h
+	$(CXX) $(CXXFLAGS) noexcept_basic.cpp main.cpp -o $(OUT)
 
-.PHONY: all clean demo
-
-all: build/lib$(NAME).a
-
-build:
-	mkdir -p build
-
-build/%.o: %.cpp | build
-	$(CXX) $(CXX_FLAGS) -I$(HERE) -c $< -o $@
-
-build/lib$(NAME).a: $(OBJECTS)
-	ar rcs $@ $^
-
-demo: build/lib$(NAME).a
-	$(CXX) $(CXX_FLAGS) -I$(HERE) main.cpp -Lbuild -l$(NAME) -o build/$(NAME)_demo
+run: $(OUT)
+	$(OUT)
 
 clean:
-	rm -rf build
+	rm -f $(OUT)
+
+.PHONY: run clean

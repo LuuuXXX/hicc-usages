@@ -1,32 +1,8 @@
 #!/usr/bin/env bash
-# Standalone build template — produces ../build/lib<name>.a
-# Replace hello_world and hello_world.cpp placeholders when scaffolding.
+# 一键构建 + 运行：g++ 直接编译，产出可执行文件并跑
 set -euo pipefail
-
-CXX=${CXX:-g++}
-CXX_FLAGS=${CXX_FLAGS:--O2 -std=c++17 -Wall -Wextra -fPIC}
-HERE="$(cd "$(dirname "$0")" && pwd)"
-BUILD_DIR="$HERE/build"
-mkdir -p "$BUILD_DIR"
-
-NAME="hello_world"
-SOURCES=(hello_world.cpp)
-
-OBJ_FILES=()
-for src in "${SOURCES[@]}"; do
-    obj="$BUILD_DIR/$(basename "$src" .cpp).o"
-    echo "[standalone] $CXX $CXX_FLAGS -c $src -o $obj"
-    "$CXX" $CXX_FLAGS -I"$HERE" -c "$HERE/$src" -o "$obj"
-    OBJ_FILES+=("$obj")
-done
-
-echo "[standalone] ar rcs $BUILD_DIR/lib${NAME}.a ${OBJ_FILES[@]}"
-ar rcs "$BUILD_DIR/lib${NAME}.a" "${OBJ_FILES[@]}"
-
-# Demo binary (links the freshly built static lib against main.cpp)
-if [ -f "$HERE/main.cpp" ]; then
-    echo "[standalone] building demo: $BUILD_DIR/${NAME}_demo"
-    "$CXX" $CXX_FLAGS -I"$HERE" "$HERE/main.cpp" -L"$BUILD_DIR" -l"$NAME" -o "$BUILD_DIR/${NAME}_demo"
-fi
-
-echo "[standalone] done: $BUILD_DIR/lib${NAME}.a"
+cd "$(dirname "$0")"
+g++ -std=c++17 -O2 -Wall -Wextra -I. \
+    hello_world.cpp main.cpp \
+    -o /tmp/hello_world_standalone
+/tmp/hello_world_standalone

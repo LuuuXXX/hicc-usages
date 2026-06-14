@@ -1,13 +1,23 @@
-use std::ffi::CStr;
-use virtual_basic::dog_new;
+use virtual_basic::*;
+
+fn show(s: &hicc_std::string) -> String {
+    let cs = unsafe { std::ffi::CStr::from_ptr(s.c_str()) };
+    cs.to_str().unwrap().to_string()
+}
 
 #[test]
-fn virtual_dispatch_through_binding() {
-    let d = dog_new(b"Rex\0".as_ptr() as *const i8);
-    let sound = d.sound();
-    let name = d.name();
-    unsafe {
-        assert_eq!(CStr::from_ptr(sound.c_str()).to_bytes(), b"Woof!");
-        assert_eq!(CStr::from_ptr(name.c_str()).to_bytes(), b"Rex");
-    }
+fn rectangle_virtual_dispatch() {
+    let r = Rectangle::new(3.0, 4.0);
+    assert_eq!(show(&r.name()), "rect");
+    assert!((r.area() - 12.0).abs() < 0.001);
+    assert!((r.perimeter() - 14.0).abs() < 0.001);
+    assert!(show(&r.describe()).contains("12"));
+}
+
+#[test]
+fn ellipse_virtual_dispatch() {
+    let e = Ellipse::new(2.0, 1.0);
+    assert_eq!(show(&e.name()), "ellipse");
+    assert!((e.area() - 6.28318).abs() < 0.01);
+    assert!(e.perimeter() > 0.0);
 }

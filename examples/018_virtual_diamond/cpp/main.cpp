@@ -1,11 +1,10 @@
 #include "virtual_diamond.h"
-#include <iostream>
 
 int main() {
-    Console* c = console_new();
-    c->write(42);
-    std::cout << "priority=" << c->priority()
-              << " read=" << c->read() << std::endl;
-    console_free(c);
+    using namespace virtual_diamond_ns;
+    IOCombo c("dev1");
+    c.write(99);
+    std::cout << c.id() << " category=" << c.category()
+              << " read=" << c.read() << " last_out=" << c.last_output() << std::endl;
     return 0;
 }

@@ -1,15 +1,29 @@
 #pragma once
+#include <string>
+#include <iostream>
+#include <sstream>
 
-// Variadic template (parameter pack). hicc can't bind `T...` directly — we
-// provide fixed-arity wrappers (sum2, sum3, sum4) that delegate to the
-// variadic template.
+namespace variadic_template_ns {
 
-template <typename... Ts>
-int sum_all(Ts... args) {
-    return (0 + ... + args);  // fold expression
+// 变参模板：递归终止
+inline std::string format() { return ""; }
+
+template <typename T, typename... Args>
+std::string format(const T& first, const Args&... rest) {
+    std::ostringstream oss;
+    oss << first;
+    return oss.str() + format(rest...);
 }
 
-// Fixed-arity wrappers — these are what Rust binds to.
-inline int sum2(int a, int b)                { return sum_all(a, b); }
-inline int sum3(int a, int b, int c)         { return sum_all(a, b, c); }
-inline int sum4(int a, int b, int c, int d)  { return sum_all(a, b, c, d); }
+// 变参模板：sum
+inline int sum_all() { return 0; }
+
+template <typename T, typename... Args>
+int sum_all(const T& first, const Args&... rest) {
+    return static_cast<int>(first) + sum_all(rest...);
+}
+
+// 显式实例化常见组合（不可能列全，主要走隐式实例化）
+int sum_three(int a, int b, int c);
+
+} // namespace variadic_template_ns

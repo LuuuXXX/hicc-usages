@@ -1,22 +1,18 @@
-use std::path::PathBuf;
-
 fn main() {
-    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let cpp_dir = manifest_dir.join("../cpp");
+    let cpp_dir = std::path::PathBuf::from("../cpp");
 
-    // hicc-build parses src/lib.rs and compiles generated C++ adapter code.
-    // `.include()` works because hicc_build::Build derefs to cc::Build.
-    hicc_build::Build::new()
-        .rust_file("src/lib.rs")
-        .include(&cpp_dir)
-        .compile("hello_world_hicc");
+    let mut build = hicc_build::Build::new();
+    use std::ops::DerefMut;
+    let cc_build: &mut cc::Build = build.deref_mut();
+    cc_build.include(&cpp_dir).include(".").cpp(true)
+            .file(cpp_dir.join("hello_world.cpp"));
 
-    // Link the externally-built C++ static library (from ../cpp/build/libhello_world.a).
-    let cpp_build = manifest_dir.join("../cpp/build");
-    println!("cargo::rustc-link-search=native={}", cpp_build.display());
+    build.rust_file("src/lib.rs").compile("hello_world");
+
     println!("cargo::rustc-link-lib=hello_world");
+    #[cfg(not(all(target_os = "windows", target_env = "msvc")))]
     println!("cargo::rustc-link-lib=stdc++");
-
-    println!("cargo::rerun-if-changed=../cpp/build/libhello_world.a");
     println!("cargo::rerun-if-changed=src/lib.rs");
+    println!("cargo::rerun-if-changed=../cpp/hello_world.cpp");
+    println!("cargo::rerun-if-changed=../cpp/hello_world.h");
 }

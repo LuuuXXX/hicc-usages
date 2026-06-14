@@ -1,3 +1,5 @@
 #include "default_args.h"
 
-int add(int a, int b) { return a + b; }
+namespace default_args_ns {
+int default_args_anchor() { return 3; }
+}

@@ -1,4 +1,6 @@
 #include "virtual_basic.h"
+#include <cmath>
 
-Dog* dog_new(const char* name) { return new Dog(name); }
-void dog_free(Dog* d)          { delete d; }
+namespace virtual_basic_ns {
+int virtual_basic_anchor() { return 15; }
+}

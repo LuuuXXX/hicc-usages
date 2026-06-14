@@ -1,14 +1,27 @@
-use template_class::{box_double_new, box_int_new};
+use template_class::*;
+
+fn show(s: &hicc_std::string) -> String {
+    let cs = unsafe { std::ffi::CStr::from_ptr(s.c_str()) };
+    cs.to_str().unwrap().to_string()
+}
 
 #[test]
-fn template_class_typedef_factory() {
-    let mut bi = box_int_new(42);
-    assert_eq!(bi.get(), 42);
-    bi.set(100);
-    assert_eq!(bi.get(), 100);
+fn stack_int_basic() {
+    let mut s = StackInt::new();
+    assert!(s.empty());
+    s.push(10); s.push(20); s.push(30);
+    assert_eq!(s.size(), 3);
+    assert_eq!(s.top(), 30);
+    s.pop();
+    assert_eq!(s.top(), 20);
+}
 
-    let mut bd = box_double_new(3.14);
-    assert!((bd.get() - 3.14).abs() < 1e-9);
-    bd.set(2.71);
-    assert!((bd.get() - 2.71).abs() < 1e-9);
+#[test]
+fn stack_string_basic() {
+    let mut s = StackString::new();
+    let h = hicc_std::string::from(c"hello");
+    let w = hicc_std::string::from(c"world");
+    s.push(&h); s.push(&w);
+    assert_eq!(s.size(), 2);
+    assert_eq!(show(&s.top()), "world");
 }

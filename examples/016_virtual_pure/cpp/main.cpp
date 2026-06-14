@@ -1,10 +1,17 @@
 #include "virtual_pure.h"
-#include <iostream>
 
 int main() {
-    MemoryStorage* s = mem_storage_new();
-    s->put("foo", "bar");
-    std::cout << "size=" << s->size() << " foo=" << s->get("foo") << std::endl;
-    mem_storage_free(s);
+    using namespace virtual_pure_ns;
+    InMemoryStorage s;
+    s.put("a", "1");
+    s.put("b", "2");
+    std::cout << "a=" << s.get("a") << " size=" << s.size() << std::endl;
+    s.dump();
+    s.remove("a");
+    std::cout << "after remove a: size=" << s.size() << std::endl;
+
+    Storage* p = &s;
+    p->put("c", "3");
+    p->dump();
     return 0;
 }

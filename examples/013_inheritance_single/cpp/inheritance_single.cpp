@@ -1,4 +1,5 @@
 #include "inheritance_single.h"
 
-Square* square_new(int side) { return new Square(side); }
-void    square_free(Square* s) { delete s; }
+namespace inheritance_single_ns {
+int inheritance_single_anchor() { return 13; }
+}

@@ -1,32 +1,52 @@
 #pragma once
+#include <string>
+#include <iostream>
 
-// Multiple inheritance. Rust treats each derived class independently.
-// If you need cross-class polymorphism across the inheritance chain,
-// hicc's #[interface] + @make_proxy is an option, but for a small demo
-// we just expose the derived class's combined method set.
+namespace inheritance_multiple_ns {
 
 class Drawable {
 public:
     virtual ~Drawable() = default;
     virtual void draw() const = 0;
+    virtual std::string shape() const { return "Drawable"; }
 };
 
 class Serializable {
 public:
     virtual ~Serializable() = default;
-    virtual int byte_size() const = 0;
+    virtual std::string serialize() const = 0;
+    virtual int bytes() const { return 0; }
 };
 
-class Sprite : public Drawable, public Serializable {
+class Circle : public Drawable, public Serializable {
 public:
-    explicit Sprite(int w, int h) : w_(w), h_(h) {}
-    void draw() const override {}
-    int  byte_size() const override { return w_ * h_ * 4; }
-    int  width() const { return w_; }
-    int  height() const { return h_; }
+    Circle(float r) : radius_(r) {}
+    void draw() const override {
+        std::cout << "Drawing Circle r=" << radius_ << std::endl;
+    }
+    std::string shape() const override { return "Circle"; }
+    std::string serialize() const override {
+        return "Circle{r=" + std::to_string(radius_) + "}";
+    }
+    int bytes() const override { return sizeof(float) + 8; }
+    float radius() const { return radius_; }
 private:
-    int w_, h_;
+    float radius_;
 };
 
-Sprite* sprite_new(int w, int h);
-void    sprite_free(Sprite* s);
+class Square : public Drawable, public Serializable {
+public:
+    Square(float side) : side_(side) {}
+    void draw() const override {
+        std::cout << "Drawing Square side=" << side_ << std::endl;
+    }
+    std::string shape() const override { return "Square"; }
+    std::string serialize() const override {
+        return "Square{s=" + std::to_string(side_) + "}";
+    }
+    float side() const { return side_; }
+private:
+    float side_;
+};
+
+} // namespace inheritance_multiple_ns

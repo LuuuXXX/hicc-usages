@@ -1,20 +1,22 @@
 #pragma once
-
 #include <memory>
+#include <string>
+#include <iostream>
 
-// shared_ptr<T>: same stripping pattern as unique_ptr. Rust receives an
-// owned T (refcount-incremented on the C++ side by the wrapper).
+namespace shared_ptr_ns {
 
-class RefCounted {
+class Counter {
 public:
-    RefCounted() { ++count_; }
-    ~RefCounted() { --count_; }
-    int use_count() const { return count_; }
-    static int count() { return count_; }
+    Counter(int start) : count_(start) {}
+    int value() const { return count_; }
+    void increment() { ++count_; }
+    void decrement() { --count_; }
 private:
-    static int count_;
+    int count_;
 };
 
-std::shared_ptr<RefCounted> make_shared_obj();
-void shared_obj_free(RefCounted* r);
-int  shared_count();
+std::shared_ptr<Counter> make_counter(int start);
+std::shared_ptr<Counter> clone_counter(const std::shared_ptr<Counter>& other);
+long use_count(const std::shared_ptr<Counter>& p);
+
+} // namespace shared_ptr_ns

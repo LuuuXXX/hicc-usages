@@ -1,13 +1,43 @@
 #include "union_basic.h"
+#include <charconv>
+#include <cstdio>
 
-ValueBox::ValueBox() : tag_(Tag::Int), as_int(0) {}
-ValueBox::~ValueBox() {}
+namespace union_basic_ns {
 
-void ValueBox::set_int(int v) { tag_ = Tag::Int; as_int = v; }
-void ValueBox::set_float(float v) { tag_ = Tag::Float; as_float = v; }
-int ValueBox::get_int() const { return as_int; }
-float ValueBox::get_float() const { return as_float; }
-int ValueBox::tag() const { return static_cast<int>(tag_); }
+Box::Box(int x)   : tag_(Tag::Int)   { v_.i = x; }
+Box::Box(float x) : tag_(Tag::Float) { v_.f = x; }
+Box::Box(long x)  : tag_(Tag::Long)  { v_.l = x; }
+Box::Box(const Box& other) : v_(other.v_), tag_(other.tag_) {}
 
-ValueBox* value_box_new() { return new ValueBox(); }
-void value_box_free(ValueBox* b) { delete b; }
+Tag Box::tag() const { return tag_; }
+int   Box::as_int()   const { return v_.i; }
+float Box::as_float() const { return v_.f; }
+long  Box::as_long()  const { return v_.l; }
+
+void Box::set_int(int x)   { v_.i = x; tag_ = Tag::Int; }
+void Box::set_float(float x) { v_.f = x; tag_ = Tag::Float; }
+void Box::set_long(long x)  { v_.l = x; tag_ = Tag::Long; }
+
+std::string Box::describe() const {
+    char buf[64];
+    switch (tag_) {
+        case Tag::Int:
+            std::snprintf(buf, sizeof(buf), "int(%d)", v_.i);
+            break;
+        case Tag::Float:
+            std::snprintf(buf, sizeof(buf), "float(%g)", static_cast<double>(v_.f));
+            break;
+        case Tag::Long:
+            std::snprintf(buf, sizeof(buf), "long(%ld)", v_.l);
+            break;
+    }
+    return std::string(buf);
+}
+
+Box make_box_int(int x)   { return Box(x); }
+Box make_box_float(float x) { return Box(x); }
+Box make_box_long(long x)  { return Box(x); }
+
+int union_basic_anchor() { return 45; }
+
+} // namespace union_basic_ns

@@ -3,14 +3,18 @@ name = "map_basic"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "map_basic"
+path = "src/lib.rs"
+
+[[bin]]
+name = "map_basic_bin"
+path = "src/main.rs"
+
 [dependencies]
 hicc = { path = "../../../hicc/hicc", version = "0.2" }
+hicc-std = { path = "../../../hicc/hicc-std", version = "0.2" }
 
 [build-dependencies]
+cc = "1.0"
 hicc-build = { path = "../../../hicc/hicc-build", version = "0.2" }
-
-[profile.dev]
-panic = "abort"
-
-[profile.release]
-panic = "abort"

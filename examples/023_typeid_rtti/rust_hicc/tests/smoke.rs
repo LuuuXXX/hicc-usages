@@ -1,25 +1,25 @@
-use std::ffi::CStr;
-use typeid_rtti::{
-    circle_new, static_type_name_circle, static_type_name_triangle, triangle_new,
-    type_name_of_circle, type_name_of_triangle,
-};
+use typeid_rtti::*;
 
 #[test]
-fn rtti_dispatch_via_typeid() {
-    let c = circle_new(2);
-    let t = triangle_new(4, 6);
+fn rtti_same_type() {
+    let a1 = DerivedA::new();
+    let a2 = DerivedA::new();
+    let b = DerivedB::new();
+    assert!(same_type_a_a(&a1, &a2));
+    assert!(!same_type_a_b(&a1, &b));
+}
 
-    let c_dyn = unsafe { CStr::from_ptr(type_name_of_circle(&c)).to_bytes().to_vec() };
-    let t_dyn = unsafe { CStr::from_ptr(type_name_of_triangle(&t)).to_bytes().to_vec() };
+#[test]
+fn rtti_is_derived_a() {
+    let a = DerivedA::new();
+    let b = DerivedB::new();
+    assert!(is_derived_a_a(&a));
+    assert!(!is_derived_a_b(&b));
+}
 
-    let c_static = unsafe { CStr::from_ptr(static_type_name_circle()).to_bytes().to_vec() };
-    let t_static = unsafe { CStr::from_ptr(static_type_name_triangle()).to_bytes().to_vec() };
-
-    // Dynamic type name from typeid() matches static type name.
-    assert_eq!(c_dyn, c_static);
-    assert_eq!(t_dyn, t_static);
-    assert_ne!(c_dyn, t_dyn);
-
-    assert_eq!(c.area(), 12);    // 3 * 2 * 2
-    assert_eq!(t.area(), 12);    // 4 * 6 / 2
+#[test]
+fn rtti_type_name_nonnull() {
+    let a = DerivedA::new();
+    let p = type_name_base_a(&a);
+    assert!(!p.is_null());
 }

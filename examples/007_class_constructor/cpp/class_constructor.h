@@ -1,17 +1,30 @@
 #pragma once
+#include <string>
+#include <iostream>
 
-// Parameterized constructor — exposed to Rust via a factory function
-// (hicc convention: constructors are not bound directly, only via factory).
+namespace class_ctor_ns {
 
-class Point {
+class Widget {
 public:
-    Point(int x, int y) : x_(x), y_(y) {}
-    int get_x() const { return x_; }
-    int get_y() const { return y_; }
-    int  manhattan() const { return (x_ < 0 ? -x_ : x_) + (y_ < 0 ? -y_ : y_); }
+    Widget() : name_("default"), value_(0) {
+        std::cout << "Widget() ctor" << std::endl;
+    }
+    explicit Widget(int v) : name_("int"), value_(v) {
+        std::cout << "Widget(int) ctor, v=" << v << std::endl;
+    }
+    Widget(std::string n, int v) : name_(std::move(n)), value_(v) {
+        std::cout << "Widget(string,int) ctor, n=" << name_ << " v=" << v << std::endl;
+    }
+    ~Widget() {
+        std::cout << "~Widget() dtor, name=" << name_ << std::endl;
+    }
+
+    const std::string& name() const { return name_; }
+    int value() const { return value_; }
+
 private:
-    int x_, y_;
+    std::string name_;
+    int value_;
 };
 
-Point* point_new(int x, int y);
-void   point_free(Point* p);
+} // namespace class_ctor_ns

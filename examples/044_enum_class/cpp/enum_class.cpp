@@ -1,24 +1,37 @@
 #include "enum_class.h"
 
-int color_to_int(Color c) { return static_cast<int>(c); }
-Color int_to_color(int v) {
-    switch (v) {
-        case 0: return Color::Red;
-        case 1: return Color::Green;
-        case 2: return Color::Blue;
-        default: return Color::Red;
-    }
-}
-const char* color_name(Color c) {
+namespace enum_class_ns {
+
+std::string color_name(Color c) {
     switch (c) {
-        case Color::Red: return "red";
+        case Color::Red:   return "red";
         case Color::Green: return "green";
-        case Color::Blue: return "blue";
+        case Color::Blue:  return "blue";
     }
-    return "?";
+    return "unknown";
 }
 
-int to_int_red() { return static_cast<int>(Color::Red); }
-int to_int_green() { return static_cast<int>(Color::Green); }
-int to_int_blue() { return static_cast<int>(Color::Blue); }
-const char* color_name_for_int(int v) { return color_name(int_to_color(v)); }
+Color color_parse(const std::string& s) {
+    if (s == "red")   return Color::Red;
+    if (s == "green") return Color::Green;
+    if (s == "blue")  return Color::Blue;
+    return Color::Red;
+}
+
+Light::Light(Color initial) : color_(initial) {}
+Color Light::current() const { return color_; }
+void Light::set(Color c) { color_ = c; }
+int Light::brightness() const {
+    switch (color_) {
+        case Color::Red:   return 100;
+        case Color::Green: return 200;
+        case Color::Blue:  return 300;
+    }
+    return 0;
+}
+
+Light make_light(Color initial) { return Light(initial); }
+
+int enum_class_anchor() { return 44; }
+
+} // namespace enum_class_ns

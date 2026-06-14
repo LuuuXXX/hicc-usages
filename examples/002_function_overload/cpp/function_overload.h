@@ -1,5 +1,13 @@
 #pragma once
+#include <string>
+#include <iostream>
 
-// C++ overload set — Rust side renames to add_i32 / add_f64 to disambiguate.
-int add(int a, int b);
-double add(double a, double b);
+namespace overload_ns {
+
+inline int add(int a, int b) { return a + b; }
+inline double add(double a, double b) { return a + b; }
+inline std::string add(const std::string& a, const std::string& b) { return a + b; }
+
+inline int add(int a, int b, int c) { return a + b + c; }
+
+} // namespace overload_ns

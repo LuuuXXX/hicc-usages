@@ -1,20 +1,24 @@
 #pragma once
-
 #include <tuple>
 #include <string>
+#include <memory>
+#include <iostream>
 
-// std::tuple<int, std::string, double>. hicc can't bind a tuple directly —
-// we provide named accessors (first/second/third) and a "make_tuple" wrapper.
+namespace tuple_basic_ns {
 
-class Triple {
-public:
-    Triple(int i, std::string s, double d) : data_(i, std::move(s), d) {}
-    int         first()  const { return std::get<0>(data_); }
-    std::string second() const { return std::get<1>(data_); }
-    double      third()  const { return std::get<2>(data_); }
-private:
-    std::tuple<int, std::string, double> data_;
-};
+// A 3-tuple: (int, std::string, double)
+using Triple = std::tuple<int, std::string, double>;
 
-Triple* triple_new(int i, const char* s, double d);
-void     triple_free(Triple* t);
+// Returns unique_ptr<Triple> so hicc can treat the returned opaque object
+// directly as Triple (default-deleter unique_ptr mapping).
+std::unique_ptr<Triple> make_triple(int id, const std::string& name, double score);
+
+// Field accessors — Rust 端通过 cpp! 包装访问 std::get<I>。
+int     triple_id(const Triple& t);
+std::string triple_name(const Triple& t);
+double  triple_score(const Triple& t);
+
+void set_id(Triple& t, int id);
+void set_score(Triple& t, double score);
+
+} // namespace tuple_basic_ns

@@ -1,17 +1,24 @@
 #pragma once
+#include <string>
+#include <iostream>
 
-// Minimal class with state + methods. Factory + deleter as free functions
-// (free-function convention is what hicc's `destroy` attribute consumes).
+namespace class_basic_ns {
 
 class Counter {
 public:
-    Counter() : value_(0) {}
-    int  get() const { return value_; }
-    void inc()        { ++value_; }
-    void reset()      { value_ = 0; }
+    Counter() : count_(0), name_("anon") {}
+    explicit Counter(const std::string& name) : count_(0), name_(name) {}
+
+    void inc() { ++count_; }
+    void inc_by(int delta) { count_ += delta; }
+    void reset() { count_ = 0; }
+
+    int count() const { return count_; }
+    const std::string& name() const { return name_; }
+
 private:
-    int value_;
+    int count_;
+    std::string name_;
 };
 
-Counter* counter_new();
-void     counter_free(Counter* c);
+} // namespace class_basic_ns
