@@ -1,29 +1,14 @@
-# Rust
+examples/*/cpp/build/
+examples/*/cpp/CMakeCache.txt
+examples/*/cpp/CMakeFiles/
+examples/*/cpp/cmake_install.cmake
+examples/*/cpp/*.o
+examples/*/rust_hicc/target/
+examples/*/rust_hicc/Cargo.lock
+examples/*/ast/*.i
+examples/*/ast/ast.json
+examples/*/ast/user-ast.json
 target/
-**/*.rs.bk
-Cargo.lock
-
-# C++ build artifacts
-build/
 build-cmake/
 cmake.log
-*.o
-*.obj
-*.a
-*.so
-*.dylib
-*.exe
-
-# AST extraction output (regenerated, large)
-**/ast/preprocessed.cpp
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*~
-
-# OS
-.DS_Store
-Thumbs.db
 _ast.err
