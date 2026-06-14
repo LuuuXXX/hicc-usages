@@ -5,6 +5,8 @@ Cargo.lock
 
 # C++ build artifacts
 build/
+build-cmake/
+cmake.log
 *.o
 *.obj
 *.a
@@ -24,3 +26,4 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+_ast.err

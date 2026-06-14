@@ -1,2 +1,0 @@
-/usr/bin/ar qc libfunctional_bind.a CMakeFiles/functional_bind.dir/functional_bind.cpp.o
-/usr/bin/ranlib libfunctional_bind.a

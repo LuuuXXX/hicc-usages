@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/lambda_basic_demo.dir/main.cpp.o -o lambda_basic_demo  liblambda_basic.a 

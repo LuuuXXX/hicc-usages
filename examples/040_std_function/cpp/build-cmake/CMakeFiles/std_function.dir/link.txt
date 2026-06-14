@@ -1,2 +1,0 @@
-/usr/bin/ar qc libstd_function.a CMakeFiles/std_function.dir/std_function.cpp.o
-/usr/bin/ranlib libstd_function.a
